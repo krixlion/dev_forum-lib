@@ -101,8 +101,8 @@ func Test_Publish(t *testing.T) {
 		broker mocks.Broker
 	}{
 		{
-			desc: "",
-			arg:  event.MakeEvent(event.ArticleDeleted, gentest.RandomString(5)),
+			desc: "Test if method is called",
+			arg:  event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5)),
 			broker: func() mocks.Broker {
 				m := mocks.Broker{Mock: new(mock.Mock)}
 				m.On("ResilientPublish", mock.AnythingOfType("event.Event")).Return(nil).Once()

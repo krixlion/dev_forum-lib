@@ -14,8 +14,9 @@ func TestMakeEvent(t *testing.T) {
 	randString := gentest.RandomString(5)
 	randArticle := gentest.RandomArticle(1, 2)
 	type args struct {
-		eType EventType
-		data  interface{}
+		aggregateId string
+		eType       EventType
+		data        interface{}
 	}
 	testCases := []struct {
 		name string
@@ -23,10 +24,11 @@ func TestMakeEvent(t *testing.T) {
 		want Event
 	}{
 		{
-			name: "Test is correctly serializes ArticleDeleted event with simple data",
+			name: "Test is correctly serializes ArticleDeleted event with random data",
 			args: args{
-				eType: ArticleDeleted,
-				data:  randString,
+				aggregateId: "article",
+				eType:       ArticleDeleted,
+				data:        randString,
 			},
 			want: Event{
 				AggregateId: "article",
@@ -42,10 +44,11 @@ func TestMakeEvent(t *testing.T) {
 			},
 		},
 		{
-			name: "",
+			name: "Test is correctly serializes ArticleUpdated event with random data",
 			args: args{
-				eType: ArticleUpdated,
-				data:  randArticle,
+				aggregateId: "article",
+				eType:       ArticleUpdated,
+				data:        randArticle,
 			},
 			want: Event{
 				AggregateId: "article",
@@ -63,7 +66,7 @@ func TestMakeEvent(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			if got := MakeEvent(tC.args.eType, tC.args.data); !cmp.Equal(got, tC.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
+			if got := MakeEvent(tC.args.aggregateId, tC.args.eType, tC.args.data); !cmp.Equal(got, tC.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
 				t.Errorf("MakeEvent():\n got = %+v\n want = %+v\n diff = %+v\n", got, tC.want, cmp.Diff(got, tC.want))
 				return
 			}
