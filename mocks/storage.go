@@ -7,48 +7,40 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type CQRStorage[T any] struct {
+type Storage[T any] struct {
 	*mock.Mock
 }
 
-func (m CQRStorage[T]) Close() error {
+func (m Storage[T]) Close() error {
 	args := m.Called()
 	return args.Error(0)
 }
 
-func (m CQRStorage[T]) Get(ctx context.Context, id string) (T, error) {
+func (m Storage[T]) Get(ctx context.Context, id string) (T, error) {
 	args := m.Called(ctx, id)
 	return args.Get(0).(T), args.Error(1)
 }
 
-func (m CQRStorage[T]) GetMultiple(ctx context.Context, offset string, limit string) ([]T, error) {
+func (m Storage[T]) GetMultiple(ctx context.Context, offset string, limit string) ([]T, error) {
 	args := m.Called(ctx, offset, limit)
 	return args.Get(0).([]T), args.Error(1)
 }
 
-func (m CQRStorage[T]) EventHandlers() map[event.EventType][]event.Handler {
-	panic("not implemented") // TODO: Implement
-}
-
-func (m CQRStorage[T]) GetBelongingIDs(ctx context.Context, userId string) ([]string, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-func (m CQRStorage[T]) Create(ctx context.Context, a T) error {
+func (m Storage[T]) Create(ctx context.Context, a T) error {
 	args := m.Called(ctx, a)
 	return args.Error(0)
 }
 
-func (m CQRStorage[T]) Update(ctx context.Context, a T) error {
+func (m Storage[T]) Update(ctx context.Context, a T) error {
 	args := m.Called(ctx, a)
 	return args.Error(0)
 }
 
-func (m CQRStorage[T]) Delete(ctx context.Context, id string) error {
+func (m Storage[T]) Delete(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
-func (m CQRStorage[T]) CatchUp(e event.Event) {
+func (m Storage[T]) CatchUp(e event.Event) {
 	m.Called(e)
 }
