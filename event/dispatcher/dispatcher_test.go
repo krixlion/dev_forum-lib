@@ -59,10 +59,10 @@ func Test_mergeChans(t *testing.T) {
 			desc: "Test if receives all events from multiple channels",
 			want: []event.Event{
 				{
-					AggregateId: gentest.RandomString(5),
+					AggregateId: event.AggregateId(gentest.RandomString(5)),
 				},
 				{
-					AggregateId: gentest.RandomString(5),
+					AggregateId: event.AggregateId(gentest.RandomString(5)),
 					Type:        event.ArticleDeleted,
 				},
 			},

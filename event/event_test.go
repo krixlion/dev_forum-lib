@@ -14,7 +14,7 @@ func TestMakeEvent(t *testing.T) {
 	randString := gentest.RandomString(5)
 	randArticle := gentest.RandomArticle(1, 2)
 	type args struct {
-		aggregateId string
+		aggregateId AggregateId
 		eType       EventType
 		data        interface{}
 	}
@@ -26,12 +26,12 @@ func TestMakeEvent(t *testing.T) {
 		{
 			name: "Test is correctly serializes ArticleDeleted event with random data",
 			args: args{
-				aggregateId: "article",
+				aggregateId: ArticleAggregate,
 				eType:       ArticleDeleted,
 				data:        randString,
 			},
 			want: Event{
-				AggregateId: "article",
+				AggregateId: ArticleAggregate,
 				Type:        ArticleDeleted,
 				Body: func() []byte {
 					data, err := json.Marshal(randString)
@@ -46,12 +46,12 @@ func TestMakeEvent(t *testing.T) {
 		{
 			name: "Test is correctly serializes ArticleUpdated event with random data",
 			args: args{
-				aggregateId: "article",
+				aggregateId: ArticleAggregate,
 				eType:       ArticleUpdated,
 				data:        randArticle,
 			},
 			want: Event{
-				AggregateId: "article",
+				AggregateId: ArticleAggregate,
 				Type:        ArticleUpdated,
 				Body: func() []byte {
 					data, err := json.Marshal(randArticle)
