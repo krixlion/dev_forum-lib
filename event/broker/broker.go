@@ -18,10 +18,11 @@ type Broker struct {
 	tracer       trace.Tracer
 }
 
-func NewBroker(mq *rabbitmq.RabbitMQ, logger logging.Logger) *Broker {
+func NewBroker(mq *rabbitmq.RabbitMQ, logger logging.Logger, tracer trace.Tracer) *Broker {
 	return &Broker{
 		messageQueue: mq,
 		logger:       logger,
+		tracer:       tracer,
 	}
 }
 
