@@ -24,9 +24,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func InitProvider(serviceName string) (func(), error) {
-	ctx := context.Background()
-
+func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	resource, err := resource.New(ctx,
 		resource.WithFromEnv(),
 		resource.WithProcess(),
@@ -78,10 +76,9 @@ func InitProvider(serviceName string) (func(), error) {
 		otlptracegrpc.WithEndpoint(otelAgentAddr),
 		otlptracegrpc.WithDialOption(grpc.WithBlock()))
 
-	sctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-
-	traceExp, err := otlptrace.New(sctx, traceClient)
+	// sctx, cancel := context.WithTimeout(ctx, time.Second)
+	// defer cancel()
+	traceExp, err := otlptrace.New(ctx, traceClient)
 	if err != nil {
 		logging.Log("Failed to create the collector trace exporter, err: %s", err)
 		return nil, err
@@ -110,11 +107,24 @@ func InitProvider(serviceName string) (func(), error) {
 	return func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
+
+		if err := metricExp.Shutdown(ctx); err != nil {
+			otel.Handle(err)
+		}
+
 		if err := traceExp.Shutdown(ctx); err != nil {
 			otel.Handle(err)
 		}
 		// pushes any last exports to the receiver
 		if err := meterProvider.Shutdown(ctx); err != nil {
+			otel.Handle(err)
+		}
+
+		if err := promExporter.Shutdown(ctx); err != nil {
+			otel.Handle(err)
+		}
+
+		if err := tracerProvider.Shutdown(ctx); err != nil {
 			otel.Handle(err)
 		}
 	}, nil
