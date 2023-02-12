@@ -36,7 +36,7 @@ func (b *Broker) ResilientPublish(e event.Event) error {
 }
 
 func (b *Broker) Publish(ctx context.Context, e event.Event) error {
-	ctx, span := b.tracer.Start(ctx, "broker.Publish")
+	ctx, span := b.tracer.Start(ctx, "broker.Publish", trace.WithSpanKind(trace.SpanKindProducer))
 	defer span.End()
 
 	msg := messageFromEvent(e)
@@ -53,7 +53,7 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 
 	events := make(chan event.Event)
 	go func() {
-		ctx, span := b.tracer.Start(ctx, "broker.Consume")
+		ctx, span := b.tracer.Start(ctx, "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
 		defer span.End()
 
 		for message := range messages {
