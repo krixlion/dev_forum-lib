@@ -11,6 +11,12 @@ type Cmd[T any] struct {
 	*mock.Mock
 }
 
+func NewCmd[T any]() Cmd[T] {
+	return Cmd[T]{
+		Mock: new(mock.Mock),
+	}
+}
+
 func (m Cmd[T]) Close() error {
 	args := m.Called()
 	return args.Error(0)

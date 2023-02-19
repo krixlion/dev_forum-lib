@@ -9,6 +9,12 @@ type Handler struct {
 	*mock.Mock
 }
 
+func NewHandler() Handler {
+	return Handler{
+		Mock: new(mock.Mock),
+	}
+}
+
 func (h Handler) Handle(e event.Event) {
 	h.Called(e)
 }

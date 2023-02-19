@@ -11,6 +11,12 @@ type Eventstore[T any] struct {
 	*mock.Mock
 }
 
+func NewEventstore[T any]() Eventstore[T] {
+	return Eventstore[T]{
+		Mock: new(mock.Mock),
+	}
+}
+
 func (m Eventstore[T]) Close() error {
 	args := m.Called()
 	return args.Error(0)

@@ -10,6 +10,12 @@ type Query[T any] struct {
 	*mock.Mock
 }
 
+func NewQuery[T any]() Query[T] {
+	return Query[T]{
+		Mock: new(mock.Mock),
+	}
+}
+
 func (m Query[T]) Close() error {
 	args := m.Called()
 	return args.Error(0)

@@ -26,16 +26,26 @@ func NewDispatcher(broker event.Broker, maxWorkers int) *Dispatcher {
 }
 
 // AddEventProviders registers provided channels as an event source.
-// This method is not thread safe and should be called before Run().
+// Events from these providers will be parsed by the subscribed handlers
 func (d *Dispatcher) AddEventProviders(providers ...<-chan event.Event) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.events = mergeChans(providers...)
 }
 
+// AddSyncEventProviders registers provided channels as an sync event source.
+// Events from these providers will be parsed by the syncHandler.
 func (d *Dispatcher) AddSyncEventProviders(providers ...<-chan event.Event) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.syncEvents = mergeChans(providers...)
 }
 
+// SetSyncHandler registers provided handler to be used as CatchUp handler
+// applying sync events, eg. updating the read model.
 func (d *Dispatcher) SetSyncHandler(handler event.Handler) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.syncHandler = handler
 }
 

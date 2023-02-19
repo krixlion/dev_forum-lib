@@ -7,8 +7,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var _ event.Broker = (*Broker)(nil)
+
 type Broker struct {
 	*mock.Mock
+}
+
+func NewBroker() Broker {
+	return Broker{
+		Mock: new(mock.Mock),
+	}
 }
 
 func (m Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (<-chan event.Event, error) {

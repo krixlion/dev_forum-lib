@@ -11,6 +11,12 @@ type Storage[T any] struct {
 	*mock.Mock
 }
 
+func NewStorage[T any]() Storage[T] {
+	return Storage[T]{
+		Mock: new(mock.Mock),
+	}
+}
+
 func (m Storage[T]) Close() error {
 	args := m.Called()
 	return args.Error(0)

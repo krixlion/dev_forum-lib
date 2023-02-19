@@ -11,6 +11,12 @@ type CQRStorage[T any] struct {
 	*mock.Mock
 }
 
+func NewCQRStorage[T any]() CQRStorage[T] {
+	return CQRStorage[T]{
+		Mock: new(mock.Mock),
+	}
+}
+
 func (m CQRStorage[T]) Close() error {
 	args := m.Called()
 	return args.Error(0)
