@@ -24,8 +24,8 @@ func containsHandler(handlers []event.Handler, target event.Handler) bool {
 	return false
 }
 
-func Test_Subscribe(t *testing.T) {
-	testCases := []struct {
+func TestDispatcher_Subscribe(t *testing.T) {
+	tests := []struct {
 		desc     string
 		handlers []event.Handler
 		eType    event.EventType
@@ -36,13 +36,13 @@ func Test_Subscribe(t *testing.T) {
 			eType:    event.UserCreated,
 		},
 	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
 			dispatcher := NewDispatcher(nil, 10)
-			dispatcher.Subscribe(tC.eType, tC.handlers...)
+			dispatcher.Subscribe(tt.eType, tt.handlers...)
 
-			for _, handler := range tC.handlers {
-				if !containsHandler(dispatcher.handlers[tC.eType], handler) {
+			for _, handler := range tt.handlers {
+				if !containsHandler(dispatcher.handlers[tt.eType], handler) {
 					t.Errorf("event.Handler was not registered succesfully")
 				}
 			}
@@ -51,7 +51,7 @@ func Test_Subscribe(t *testing.T) {
 }
 
 func Test_mergeChans(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		desc string
 		want []event.Event
 	}{
@@ -68,11 +68,11 @@ func Test_mergeChans(t *testing.T) {
 			},
 		},
 	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
 
 			chans := func() (chans []<-chan event.Event) {
-				for _, e := range tC.want {
+				for _, e := range tt.want {
 					v := make(chan event.Event, 1)
 					v <- e
 					chans = append(chans, v)
@@ -82,20 +82,52 @@ func Test_mergeChans(t *testing.T) {
 
 			out := mergeChans(chans...)
 			var got []event.Event
-			for i := 0; i < len(tC.want); i++ {
+			for i := 0; i < len(tt.want); i++ {
 				got = append(got, <-out)
 			}
 
-			if !assert.ElementsMatch(t, got, tC.want) {
-				t.Errorf("Events are not equal:\n got = %+v\n want = %+v\n", got, tC.want)
+			if !assert.ElementsMatch(t, got, tt.want) {
+				t.Errorf("Events are not equal:\n got = %+v\n want = %+v\n", got, tt.want)
 				return
 			}
 		})
 	}
 }
 
-func Test_Publish(t *testing.T) {
-	testCases := []struct {
+func TestDispatcher_Publish(t *testing.T) {
+	tests := []struct {
+		desc   string
+		arg    event.Event
+		broker mocks.Broker
+	}{
+		{
+			desc: "Test if method is called",
+			arg:  event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5)),
+			broker: func() mocks.Broker {
+				m := mocks.Broker{Mock: new(mock.Mock)}
+				m.On("Publish", mock.Anything, mock.AnythingOfType("event.Event")).Return(nil).Once()
+				return m
+			}(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			d := NewDispatcher(tt.broker, 2)
+
+			d.Publish(ctx, tt.arg)
+
+			tt.broker.AssertCalled(t, "Publish", ctx, tt.arg)
+			tt.broker.AssertExpectations(t)
+			tt.broker.AssertNumberOfCalls(t, "Publish", 1)
+		})
+	}
+}
+
+func TestDispatcher_ResilientPublish(t *testing.T) {
+	tests := []struct {
 		desc   string
 		arg    event.Event
 		broker mocks.Broker
@@ -110,19 +142,21 @@ func Test_Publish(t *testing.T) {
 			}(),
 		},
 	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			d := NewDispatcher(tC.broker, 2)
-			d.Publish(tC.arg)
 
-			tC.broker.AssertCalled(t, "ResilientPublish", tC.arg)
-			tC.broker.AssertExpectations(t)
-			tC.broker.AssertNumberOfCalls(t, "ResilientPublish", 1)
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			d := NewDispatcher(tt.broker, 2)
+
+			d.ResilientPublish(tt.arg)
+
+			tt.broker.AssertCalled(t, "ResilientPublish", tt.arg)
+			tt.broker.AssertExpectations(t)
+			tt.broker.AssertNumberOfCalls(t, "ResilientPublish", 1)
 		})
 	}
 }
 
-func Test_Dispatch(t *testing.T) {
+func TestDispatcher_Dispatch(t *testing.T) {
 	testCases := []struct {
 		desc    string
 		arg     event.Event
@@ -157,7 +191,7 @@ func Test_Dispatch(t *testing.T) {
 	}
 }
 
-func Test_Run(t *testing.T) {
+func TestDispatcher_Run(t *testing.T) {
 	t.Run("Test if Run() returns on context cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		errg, ctx := errgroup.WithContext(ctx)

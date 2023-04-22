@@ -18,7 +18,7 @@ func TestMakeEvent(t *testing.T) {
 		eType       EventType
 		data        interface{}
 	}
-	testCases := []struct {
+	tests := []struct {
 		name string
 		args args
 		want Event
@@ -64,10 +64,10 @@ func TestMakeEvent(t *testing.T) {
 			},
 		},
 	}
-	for _, tC := range testCases {
-		t.Run(tC.name, func(t *testing.T) {
-			if got := MakeEvent(tC.args.aggregateId, tC.args.eType, tC.args.data); !cmp.Equal(got, tC.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
-				t.Errorf("MakeEvent():\n got = %+v\n want = %+v\n diff = %+v\n", got, tC.want, cmp.Diff(got, tC.want))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MakeEvent(tt.args.aggregateId, tt.args.eType, tt.args.data); !cmp.Equal(got, tt.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
+				t.Errorf("MakeEvent():\n got = %+v\n want = %+v\n diff = %+v\n", got, tt.want, cmp.Diff(got, tt.want))
 				return
 			}
 		})
