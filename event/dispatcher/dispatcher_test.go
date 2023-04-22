@@ -102,7 +102,14 @@ func TestDispatcher_Publish(t *testing.T) {
 	}{
 		{
 			desc: "Test if method is called",
-			arg:  event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5)),
+			arg: func() event.Event {
+				event, err := event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5))
+				if err != nil {
+					panic(err)
+				}
+
+				return event
+			}(),
 			broker: func() mocks.Broker {
 				m := mocks.Broker{Mock: new(mock.Mock)}
 				m.On("Publish", mock.Anything, mock.AnythingOfType("event.Event")).Return(nil).Once()
@@ -134,8 +141,14 @@ func TestDispatcher_ResilientPublish(t *testing.T) {
 	}{
 		{
 			desc: "Test if method is called",
-			arg:  event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5)),
-			broker: func() mocks.Broker {
+			arg: func() event.Event {
+				event, err := event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5))
+				if err != nil {
+					panic(err)
+				}
+
+				return event
+			}(), broker: func() mocks.Broker {
 				m := mocks.Broker{Mock: new(mock.Mock)}
 				m.On("ResilientPublish", mock.AnythingOfType("event.Event")).Return(nil).Once()
 				return m

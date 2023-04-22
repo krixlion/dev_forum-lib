@@ -14,16 +14,17 @@ type Event struct {
 }
 
 // MakeEvent returns an event serialized for general use.
-// Panics when data cannot be marshaled into json.
-func MakeEvent(aggregateId AggregateId, eType EventType, data interface{}) Event {
+// Returns an error when data cannot be marshaled into json.
+func MakeEvent(aggregateId AggregateId, eType EventType, data interface{}) (Event, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		panic(err)
+		return Event{}, err
 	}
+
 	return Event{
 		AggregateId: aggregateId,
 		Type:        eType,
 		Body:        jsonData,
 		Timestamp:   time.Now(),
-	}
+	}, nil
 }

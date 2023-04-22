@@ -10,7 +10,7 @@ import (
 	"github.com/krixlion/dev_forum-lib/internal/gentest"
 )
 
-func TestMakeEvent(t *testing.T) {
+func Test_MakeEvent(t *testing.T) {
 	randString := gentest.RandomString(5)
 	randArticle := gentest.RandomArticle(1, 2)
 	type args struct {
@@ -66,9 +66,14 @@ func TestMakeEvent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MakeEvent(tt.args.aggregateId, tt.args.eType, tt.args.data); !cmp.Equal(got, tt.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
-				t.Errorf("MakeEvent():\n got = %+v\n want = %+v\n diff = %+v\n", got, tt.want, cmp.Diff(got, tt.want))
+			got, err := MakeEvent(tt.args.aggregateId, tt.args.eType, tt.args.data)
+			if err != nil {
+				t.Errorf("MakeEvent(): error = %v", err)
 				return
+			}
+
+			if !cmp.Equal(got, tt.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
+				t.Errorf("MakeEvent():\n got = %+v\n want = %+v\n diff = %+v\n", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
