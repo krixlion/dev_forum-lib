@@ -68,11 +68,23 @@ func (d *Dispatcher) Subscribe(eType event.EventType, handlers ...event.Handler)
 	d.handlers[eType] = append(d.handlers[eType], handlers...)
 }
 
-func (d *Dispatcher) Publish(e event.Event) {
+func (d *Dispatcher) ResilientPublish(e event.Event) error {
 	if err := d.broker.ResilientPublish(e); err != nil {
-		panic(err)
+		return err
 	}
+
 	d.Dispatch(e)
+	return nil
+}
+
+func (d *Dispatcher) Publish(ctx context.Context, e event.Event) error {
+	if err := d.broker.Publish(ctx, e); err != nil {
+		return err
+	}
+
+	d.Dispatch(e)
+
+	return nil
 }
 
 func (d *Dispatcher) Dispatch(e event.Event) {
