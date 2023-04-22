@@ -1,6 +1,6 @@
 package event
 
-// All event names must be lowercase and follow the structure: "noun-action".
+// All event names must be lowercase and follow the structure: "{noun}-{action}".
 // Eg. article-created, notification-sent, order-accepted.
 // For longer names use snake-case naming.
 // Eg. changed_password_notification-sent.
@@ -14,4 +14,9 @@ const (
 	UserCreated EventType = "user-created"
 	UserDeleted EventType = "user-deleted"
 	UserUpdated EventType = "user-updated"
+
+	UserLoggedIn  EventType = "user-logged_in"
+	UserLoggedOut EventType = "user-logged_out"
+
+	KeySetUpdated EventType = "key_set-updated"
 )
