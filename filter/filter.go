@@ -19,16 +19,16 @@ const (
 	operatorPrefix      = "$"
 )
 
-type Operator int
+type Operator string
 
 const (
-	Unknown Operator = 1 << iota
-	Equal
-	NotEqual
-	GreaterThan
-	LesserThan
-	GreaterThanOrEqual
-	LesserThanOrEqual
+	Unknown            Operator = "UNKNOWN"
+	Equal              Operator = "eq"
+	NotEqual           Operator = "neq"
+	GreaterThan        Operator = "gt"
+	LesserThan         Operator = "lt"
+	GreaterThanOrEqual Operator = "gte"
+	LesserThanOrEqual  Operator = "lte"
 )
 
 type Parameter struct {
@@ -37,53 +37,16 @@ type Parameter struct {
 	Value     string
 }
 
-func (param Parameter) ToFilter() string {
-
-	query := ""
-	query += strings.ToLower(param.Attribute)
-	query += operatorOpeningSign
-	query += param.Operator.String()
-	query += operatorClosingSign
-	query += valueAssigmentSign
-	query += param.Value
-	return query
-}
-
-func (s Operator) String() string {
-	switch s {
-	case Equal:
-		return operatorPrefix + "eq"
-	case NotEqual:
-		return operatorPrefix + "neq"
-	case GreaterThan:
-		return operatorPrefix + "gt"
-	case LesserThan:
-		return operatorPrefix + "lt"
-	case GreaterThanOrEqual:
-		return operatorPrefix + "gte"
-	case LesserThanOrEqual:
-		return operatorPrefix + "lte"
-	default:
-		return "unknown operator"
-	}
-}
-
-func matchOperator(operator string) (Operator, error) {
-	switch operator {
-	case Equal.String():
-		return Equal, nil
-	case NotEqual.String():
-		return NotEqual, nil
-	case GreaterThan.String():
-		return GreaterThan, nil
-	case LesserThan.String():
-		return LesserThan, nil
-	case GreaterThanOrEqual.String():
-		return GreaterThanOrEqual, nil
-	case LesserThanOrEqual.String():
-		return LesserThanOrEqual, nil
-	default:
-		return Unknown, ErrInvalidOperator
+// AllOperators returns all registered operators' string representations keyed by their enum.
+func AllOperators() map[Operator]string {
+	return map[Operator]string{
+		Equal:              string(Equal),
+		Unknown:            string(Unknown),
+		NotEqual:           string(NotEqual),
+		GreaterThan:        string(GreaterThan),
+		LesserThan:         string(LesserThan),
+		GreaterThanOrEqual: string(GreaterThanOrEqual),
+		LesserThanOrEqual:  string(LesserThanOrEqual),
 	}
 }
 
@@ -123,7 +86,7 @@ func Parse(query string) ([]Parameter, error) {
 		rawOperator := parsed[1]
 		rawOperator = strings.Trim(rawOperator, operatorClosingSign)
 
-		operator, err := matchOperator(rawOperator)
+		operator, err := MatchOperator(rawOperator)
 		if err != nil {
 			return nil, err
 		}
@@ -137,4 +100,30 @@ func Parse(query string) ([]Parameter, error) {
 	}
 
 	return parsedParams, nil
+}
+
+func (param Parameter) ToFilter() string {
+
+	query := ""
+	query += strings.ToLower(param.Attribute)
+	query += operatorOpeningSign
+	query += string(param.Operator)
+	query += operatorClosingSign
+	query += valueAssigmentSign
+	query += param.Value
+	return query
+}
+
+// MatchOperator checks if provided input is a registered operator.
+// Returns a non-nil error if the operator is not found.
+func MatchOperator(input string) (Operator, error) {
+	trimmed := strings.Trim(input, operatorPrefix)
+	operator := Operator(trimmed)
+
+	_, ok := AllOperators()[operator]
+	if !ok {
+		return "", ErrInvalidOperator
+	}
+
+	return operator, nil
 }

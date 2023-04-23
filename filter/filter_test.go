@@ -69,7 +69,7 @@ func Test_Parse(t *testing.T) {
 	}
 }
 
-func Test_matchOperator(t *testing.T) {
+func Test_MatchOperator(t *testing.T) {
 	type args struct {
 		operator string
 	}
@@ -115,15 +115,15 @@ func Test_matchOperator(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for i, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := matchOperator(tt.args.operator)
+			got, err := MatchOperator(tt.args.operator)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("matchOperator() set:%d error = %v, wantErr %v", i, err, tt.wantErr)
+				t.Errorf("MatchOperator() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want && !tt.wantErr {
-				t.Errorf("matchOperator() set:%d got = %+v, want %+v", i, got, tt.want)
+				t.Errorf("MatchOperator() got = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
