@@ -138,3 +138,60 @@ func Test_MatchOperator(t *testing.T) {
 		})
 	}
 }
+
+func TestFilter_String(t *testing.T) {
+	tests := []struct {
+		name   string
+		filter Filter
+		want   string
+	}{
+		{
+			name: "Test if parameter suffix is cut correctly",
+			filter: Filter{
+				{
+					Attribute: "user_id",
+					Operator:  Equal,
+					Value:     "1",
+				},
+				{
+					Attribute: "name",
+					Operator:  Equal,
+					Value:     "5",
+				},
+			},
+			want: "user_id[$eq]=1&name[$eq]=5",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.filter.String(); got != tt.want {
+				t.Errorf("Filter.String():\n got = %v\n want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParameter_String(t *testing.T) {
+	tests := []struct {
+		name  string
+		param Parameter
+		want  string
+	}{
+		{
+			name: "Test",
+			param: Parameter{
+				Attribute: "user_id",
+				Operator:  Equal,
+				Value:     "1",
+			},
+			want: "user_id[$eq]=1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.param.String(); got != tt.want {
+				t.Errorf("Parameter.String():\n got = %v\n want = %v", got, tt.want)
+			}
+		})
+	}
+}

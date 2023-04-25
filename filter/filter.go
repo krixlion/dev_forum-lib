@@ -127,6 +127,7 @@ func (param Parameter) String() string {
 	query := ""
 	query += strings.ToLower(param.Attribute)
 	query += operatorOpeningSign
+	query += operatorPrefix
 	query += string(param.Operator)
 	query += operatorClosingSign
 	query += valueAssigmentSign
