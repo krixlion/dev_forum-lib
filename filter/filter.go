@@ -116,7 +116,7 @@ func (filter Filter) String() string {
 		filterStr += (param.String() + parameterSeparator)
 	}
 
-	// Cut ending seperator so that it can be parsed
+	// Cut ending seperator so that it can be correctly parsed by filter.Parse().
 	filterStr, _ = strings.CutSuffix(filterStr, parameterSeparator)
 
 	return filterStr
