@@ -51,6 +51,7 @@ func AllOperators() map[Operator]string {
 }
 
 // Parse parses input query string.
+// Returns nil and a nil error on empty query.
 //
 // Example input:
 //
@@ -63,6 +64,10 @@ func AllOperators() map[Operator]string {
 func Parse(query string) ([]Parameter, error) {
 	parsedParams := []Parameter{}
 	params := strings.Split(query, parameterSeparator)
+
+	if query == "" {
+		return nil, nil
+	}
 
 	for _, param := range params {
 		beforeValue, value, found := strings.Cut(param, valueAssigmentSign)

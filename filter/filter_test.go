@@ -54,6 +54,11 @@ func Test_Parse(t *testing.T) {
 			args:    args{query: "na.me[$eq]=john&last.name[$eq]=doe"},
 			wantErr: true,
 		},
+		{
+			name: "Test if returns nil on empty query",
+			args: args{query: ""},
+			want: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
