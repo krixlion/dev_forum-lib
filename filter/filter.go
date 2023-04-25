@@ -31,6 +31,8 @@ const (
 	LesserThanOrEqual  Operator = "lte"
 )
 
+type Filter []Parameter
+
 type Parameter struct {
 	Attribute string
 	Operator  Operator
@@ -61,8 +63,8 @@ func AllOperators() map[Operator]string {
 // Output:
 //
 //	[{Field:name Operator:$eq Value:john} {Field:last_name Operator:$eq Value:doe}]%
-func Parse(query string) ([]Parameter, error) {
-	parsedParams := []Parameter{}
+func Parse(query string) (Filter, error) {
+	parsedParams := Filter{}
 	params := strings.Split(query, parameterSeparator)
 
 	if query == "" {
@@ -105,6 +107,19 @@ func Parse(query string) ([]Parameter, error) {
 	}
 
 	return parsedParams, nil
+}
+
+// String builds a filter string representation of all params.
+func (filter Filter) String() string {
+	filterStr := ""
+	for _, param := range filter {
+		filterStr += (param.String() + parameterSeparator)
+	}
+
+	// Cut ending seperator so that it can be parsed
+	filterStr, _ = strings.CutSuffix(filterStr, parameterSeparator)
+
+	return filterStr
 }
 
 func (param Parameter) String() string {

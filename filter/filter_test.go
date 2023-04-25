@@ -14,13 +14,13 @@ func Test_Parse(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []Parameter
+		want    Filter
 		wantErr bool
 	}{
 		{
 			name: "Test if parses simple alphanumeric query with an underscore and multiple params",
 			args: args{query: "name1[$eq]=john&last_na2me[$eq]=doe"},
-			want: []Parameter{
+			want: Filter{
 				{
 					Attribute: "name1",
 					Operator:  Equal,
@@ -36,7 +36,7 @@ func Test_Parse(t *testing.T) {
 		{
 			name: "Test if allows for dashes and underscores",
 			args: args{query: "na-me_[$eq]=john&last_name-[$eq]=doe"},
-			want: []Parameter{
+			want: Filter{
 				{
 					Attribute: "na-me_",
 					Operator:  Equal,
@@ -48,6 +48,11 @@ func Test_Parse(t *testing.T) {
 					Value:     "doe",
 				},
 			},
+		},
+		{
+			name:    "Test if fails on filter ending with parameter separator",
+			args:    args{query: "na-me_[$eq]=john&last_name-[$eq]=doe&"},
+			wantErr: true,
 		},
 		{
 			name:    "Test if fails on dot in param attribute",
