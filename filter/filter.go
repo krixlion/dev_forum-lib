@@ -107,7 +107,7 @@ func Parse(query string) ([]Parameter, error) {
 	return parsedParams, nil
 }
 
-func (param Parameter) ToFilter() string {
+func (param Parameter) String() string {
 
 	query := ""
 	query += strings.ToLower(param.Attribute)
