@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// LoadCredentials loads server's certificate and private key from files.
+// LoadCredentials loads server's certificate and private key from provided filepaths.
 func LoadCredentials(certPath, keyPath string) (credentials.TransportCredentials, error) {
 	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
