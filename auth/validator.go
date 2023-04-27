@@ -15,13 +15,17 @@ var (
 	ErrKeySetNotFound   = errors.New("key set not found")
 )
 
-type TokenValidator struct {
+type TokenValidator interface {
+	VerifyToken(string) error
+}
+
+type JWTValidator struct {
 	config Config
 	// keySetExpired is a channel which notifies
 	// when the current keyset is outdated
 	keySetExpired chan struct{}
 
-	keySetMutex *sync.Mutex
+	keySetMutex sync.Mutex
 	keySet      jwk.Set
 }
 
@@ -51,20 +55,21 @@ type Key struct {
 // MakeTokenValidator returns a new instance
 // or a non-nil error if provided RefreshFunc is nil.
 // If no Clock is provided in the config time.Now() is used by default.
-// Note that you need to invoke Run() to start fetching keysets.
-func MakeTokenValidator(config Config) (TokenValidator, error) {
+//
+// Make sure to invoke Run() before verifying tokens to start fetching keysets.
+func MakeTokenValidator(config Config) (*JWTValidator, error) {
 	if config.RefreshFunc == nil {
-		return TokenValidator{}, errors.New("RefreshFunc is nil")
+		return nil, errors.New("RefreshFunc is nil")
 	}
 
 	if config.Clock == nil {
 		config.Clock = jwt.ClockFunc(time.Now)
 	}
 
-	v := TokenValidator{
+	v := &JWTValidator{
 		config:        config,
 		keySetExpired: make(chan struct{}, 16),
-		keySetMutex:   &sync.Mutex{},
+		keySetMutex:   sync.Mutex{},
 	}
 	return v, nil
 }
@@ -72,7 +77,7 @@ func MakeTokenValidator(config Config) (TokenValidator, error) {
 // Run starts validator to refresh keySet automatically using RefreshFunc.
 // This function will block until provided context is cancelled or the validator
 // fails to fetch a new keyset.
-func (validator *TokenValidator) Run(ctx context.Context) error {
+func (validator *JWTValidator) Run(ctx context.Context) error {
 	validator.keySetExpired <- struct{}{}
 
 	for {
@@ -88,14 +93,14 @@ func (validator *TokenValidator) Run(ctx context.Context) error {
 	}
 }
 
-// VerifyJWT returns a non-nil error if the token is expired,
+// VerifyToken returns a non-nil error if the token is expired,
 // signature is invalid or any of the token's claims are different than expected.
 // Eg. token was issued in the future or specified 'kid' does not exist.
 //
 // Note that if the keyset expires, this method will not wait for a new keyset to be fetched
 // and instead it will return an error and will continue to do so until
 // an updated keyset is succesfully retrieved.
-func (validator *TokenValidator) VerifyJWT(token string) error {
+func (validator *JWTValidator) VerifyToken(token string) error {
 	jwToken, err := jwt.ParseString(token, jwt.WithKeySetProvider(validator.keySetProvider()))
 	if err != nil {
 		return err
@@ -120,7 +125,7 @@ func (validator *TokenValidator) VerifyJWT(token string) error {
 
 // fetchKeySet invokes the RefreshFunc and serializes keys into validator's keySet.
 // Safe for concurrent use.
-func (validator *TokenValidator) fetchKeySet(ctx context.Context) error {
+func (validator *JWTValidator) fetchKeySet(ctx context.Context) error {
 	keys, err := validator.config.RefreshFunc(ctx)
 	if err != nil {
 		return err
@@ -141,7 +146,7 @@ func (validator *TokenValidator) fetchKeySet(ctx context.Context) error {
 
 // keySetProvider returns a callback that safely returns the keyset for the library to use when verifying a JWS.
 // Safe for concurrent use.
-func (validator *TokenValidator) keySetProvider() jwt.KeySetProvider {
+func (validator *JWTValidator) keySetProvider() jwt.KeySetProvider {
 	return jwt.KeySetProviderFunc(func(jwt.Token) (jwk.Set, error) {
 
 		validator.keySetMutex.Lock()

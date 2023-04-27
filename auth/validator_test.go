@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func setUpTokenValidator(ctx context.Context, refresher RefreshFunc, clockFunc jwt.Clock) TokenValidator {
+func setUpTokenValidator(ctx context.Context, refresher RefreshFunc, clockFunc jwt.Clock) *JWTValidator {
 	v, err := MakeTokenValidator(Config{
 		Issuer:      testIssuer,
 		Clock:       clockFunc,
@@ -137,7 +137,7 @@ func TestTokenValidator_VerifyJWT(t *testing.T) {
 			defer cancel()
 			v := setUpTokenValidator(ctx, tt.refreshFunc, tt.clockFunc)
 
-			if err := v.VerifyJWT(tt.args.token); (err != nil) != tt.wantErr {
+			if err := v.VerifyToken(tt.args.token); (err != nil) != tt.wantErr {
 				t.Errorf("TokenManager.VerifyJWT() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
