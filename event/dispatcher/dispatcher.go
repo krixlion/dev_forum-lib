@@ -7,20 +7,24 @@ import (
 	"github.com/krixlion/dev_forum-lib/event"
 )
 
-type Dispatcher struct {
-	maxWorkers  int
-	mu          sync.Mutex
-	handlers    map[event.EventType][]event.Handler
-	events      <-chan event.Event
-	broker      event.Broker
-	syncHandler event.Handler
-	syncEvents  <-chan event.Event
+type Listener interface {
+	// EventHandlers returns all event handlers specific to an implementation
+	// which are registered at the composition root.
+	// These handlers should not be used to sync read and write models
+	// and should be separated from them, applying other domain events.
+	EventHandlers() map[event.EventType][]event.Handler
 }
 
-func NewDispatcher(broker event.Broker, maxWorkers int) *Dispatcher {
+type Dispatcher struct {
+	maxWorkers int
+	events     <-chan event.Event
+	mu         sync.Mutex
+	handlers   map[event.EventType][]event.Handler
+}
+
+func NewDispatcher(maxWorkers int) *Dispatcher {
 	return &Dispatcher{
 		maxWorkers: maxWorkers,
-		broker:     broker,
 		handlers:   make(map[event.EventType][]event.Handler),
 	}
 }
@@ -33,27 +37,11 @@ func (d *Dispatcher) AddEventProviders(providers ...<-chan event.Event) {
 	d.events = mergeChans(providers...)
 }
 
-// AddSyncEventProviders registers provided channels as an sync event source.
-// Events from these providers will be parsed by the syncHandler.
-func (d *Dispatcher) AddSyncEventProviders(providers ...<-chan event.Event) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.syncEvents = mergeChans(providers...)
-}
-
-// SetSyncHandler registers provided handler to be used as CatchUp handler
-// applying sync events, eg. updating the read model.
-func (d *Dispatcher) SetSyncHandler(handler event.Handler) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.syncHandler = handler
-}
-
+// Run blocks until the context is cancelled.
+// Run starts the dispatcher to listen for events from its event providers and dispatch those events.
 func (d *Dispatcher) Run(ctx context.Context) {
 	for {
 		select {
-		case event := <-d.syncEvents:
-			d.syncHandler.Handle(event)
 		case event := <-d.events:
 			d.Dispatch(event)
 		case <-ctx.Done():
@@ -62,29 +50,21 @@ func (d *Dispatcher) Run(ctx context.Context) {
 	}
 }
 
+// Subscribe registers handlers for specified event type.
+// They will be invoked when an according event is dispatched.
 func (d *Dispatcher) Subscribe(eType event.EventType, handlers ...event.Handler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.handlers[eType] = append(d.handlers[eType], handlers...)
 }
 
-func (d *Dispatcher) ResilientPublish(e event.Event) error {
-	if err := d.broker.ResilientPublish(e); err != nil {
-		return err
+// Register is a helper method allowing to subscribe multiple event listeners at once.
+func (d *Dispatcher) Register(h ...Listener) {
+	for _, v := range h {
+		for eType, handlers := range v.EventHandlers() {
+			d.Subscribe(eType, handlers...)
+		}
 	}
-
-	d.Dispatch(e)
-	return nil
-}
-
-func (d *Dispatcher) Publish(ctx context.Context, e event.Event) error {
-	if err := d.broker.Publish(ctx, e); err != nil {
-		return err
-	}
-
-	d.Dispatch(e)
-
-	return nil
 }
 
 func (d *Dispatcher) Dispatch(e event.Event) {
@@ -99,13 +79,13 @@ func (d *Dispatcher) Dispatch(e event.Event) {
 	}
 }
 
-func mergeChans(cs ...<-chan event.Event) <-chan event.Event {
+func mergeChans(channels ...<-chan event.Event) <-chan event.Event {
 	out := make(chan event.Event)
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(cs))
+	wg.Add(len(channels))
 
-	for _, c := range cs {
+	for _, c := range channels {
 		go func(c <-chan event.Event) {
 			for v := range c {
 				out <- v

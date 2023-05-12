@@ -26,19 +26,19 @@ func containsHandler(handlers []event.Handler, target event.Handler) bool {
 
 func TestDispatcher_Subscribe(t *testing.T) {
 	tests := []struct {
-		desc     string
+		name     string
 		handlers []event.Handler
 		eType    event.EventType
 	}{
 		{
-			desc:     "Check if simple handler is subscribed succesfully",
+			name:     "Check if simple handler is subscribed succesfully",
 			handlers: []event.Handler{mocks.Handler{Mock: new(mock.Mock)}},
 			eType:    event.UserCreated,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			dispatcher := NewDispatcher(nil, 10)
+		t.Run(tt.name, func(t *testing.T) {
+			dispatcher := NewDispatcher(10)
 			dispatcher.Subscribe(tt.eType, tt.handlers...)
 
 			for _, handler := range tt.handlers {
@@ -52,11 +52,11 @@ func TestDispatcher_Subscribe(t *testing.T) {
 
 func Test_mergeChans(t *testing.T) {
 	tests := []struct {
-		desc string
+		name string
 		want []event.Event
 	}{
 		{
-			desc: "Test if receives all events from multiple channels",
+			name: "Test if receives all events from multiple channels",
 			want: []event.Event{
 				{
 					AggregateId: event.AggregateId(gentest.RandomString(5)),
@@ -69,7 +69,7 @@ func Test_mergeChans(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 
 			chans := func() (chans []<-chan event.Event) {
 				for _, e := range tt.want {
@@ -94,90 +94,15 @@ func Test_mergeChans(t *testing.T) {
 	}
 }
 
-func TestDispatcher_Publish(t *testing.T) {
-	tests := []struct {
-		desc   string
-		arg    event.Event
-		broker mocks.Broker
-	}{
-		{
-			desc: "Test if method is called",
-			arg: func() event.Event {
-				event, err := event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5))
-				if err != nil {
-					panic(err)
-				}
-
-				return event
-			}(),
-			broker: func() mocks.Broker {
-				m := mocks.Broker{Mock: new(mock.Mock)}
-				m.On("Publish", mock.Anything, mock.AnythingOfType("event.Event")).Return(nil).Once()
-				return m
-			}(),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-			d := NewDispatcher(tt.broker, 2)
-
-			d.Publish(ctx, tt.arg)
-
-			tt.broker.AssertCalled(t, "Publish", ctx, tt.arg)
-			tt.broker.AssertExpectations(t)
-			tt.broker.AssertNumberOfCalls(t, "Publish", 1)
-		})
-	}
-}
-
-func TestDispatcher_ResilientPublish(t *testing.T) {
-	tests := []struct {
-		desc   string
-		arg    event.Event
-		broker mocks.Broker
-	}{
-		{
-			desc: "Test if method is called",
-			arg: func() event.Event {
-				event, err := event.MakeEvent("user", event.ArticleDeleted, gentest.RandomString(5))
-				if err != nil {
-					panic(err)
-				}
-
-				return event
-			}(), broker: func() mocks.Broker {
-				m := mocks.Broker{Mock: new(mock.Mock)}
-				m.On("ResilientPublish", mock.AnythingOfType("event.Event")).Return(nil).Once()
-				return m
-			}(),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			d := NewDispatcher(tt.broker, 2)
-
-			d.ResilientPublish(tt.arg)
-
-			tt.broker.AssertCalled(t, "ResilientPublish", tt.arg)
-			tt.broker.AssertExpectations(t)
-			tt.broker.AssertNumberOfCalls(t, "ResilientPublish", 1)
-		})
-	}
-}
-
 func TestDispatcher_Dispatch(t *testing.T) {
-	testCases := []struct {
-		desc    string
+	tests := []struct {
+		name    string
 		arg     event.Event
 		handler mocks.Handler
 		broker  mocks.Broker
 	}{
 		{
-			desc: "Test if handler is called on simple event",
+			name: "Test if handler is called on simple event",
 			arg: event.Event{
 				Type:        event.ArticleCreated,
 				AggregateId: "article",
@@ -189,17 +114,17 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			}(),
 		},
 	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			d := NewDispatcher(tC.broker, 2)
-			d.Subscribe(tC.arg.Type, tC.handler)
-			d.Dispatch(tC.arg)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := NewDispatcher(2)
+			d.Subscribe(tt.arg.Type, tt.handler)
+			d.Dispatch(tt.arg)
 
 			// Wait for the handler to get invoked in a seperate goroutine.
 			time.Sleep(time.Millisecond * 5)
 
-			tC.handler.AssertCalled(t, "Handle", tC.arg)
-			tC.handler.AssertNumberOfCalls(t, "Handle", 1)
+			tt.handler.AssertCalled(t, "Handle", tt.arg)
+			tt.handler.AssertNumberOfCalls(t, "Handle", 1)
 		})
 	}
 }
@@ -209,7 +134,7 @@ func TestDispatcher_Run(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		errg, ctx := errgroup.WithContext(ctx)
 
-		d := NewDispatcher(nil, 20)
+		d := NewDispatcher(20)
 		errg.Go(func() error {
 			d.Run(ctx)
 			return nil

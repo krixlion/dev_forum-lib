@@ -19,10 +19,10 @@ type Consumer interface {
 type Publisher interface {
 	io.Closer
 
-	// Exchanges and queues should be maintained internally depending on the type of event.
+	// Exchanges and queues are maintained internally depending on the type of event.
 	Publish(context.Context, Event) error
 
-	// Resilient publish should return only parsing error and on any other error retry each event until it succeeds.
+	// Resilient publish returns only parsing error and on any other error retries each event until it succeeds.
 	ResilientPublish(Event) error
 }
 
