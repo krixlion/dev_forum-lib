@@ -3,6 +3,7 @@ package cert
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 
 	"github.com/krixlion/dev_forum-lib/fs"
 )
@@ -32,7 +33,9 @@ func LoadCaPool(path string) (*x509.CertPool, error) {
 		return nil, err
 	}
 
-	cert, err := x509.ParseCertificate(pemServerCA)
+	block, _ := pem.Decode(pemServerCA)
+
+	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
