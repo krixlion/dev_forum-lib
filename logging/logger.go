@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var global log
+var global stdLogger
 
 func init() {
 	l, err := NewLogger()
@@ -15,11 +15,7 @@ func init() {
 		panic(err)
 	}
 
-	global = l.(log)
-}
-
-func Log(msg string, keyvals ...interface{}) {
-	global.l.Infow(msg, keyvals...)
+	global = l.(stdLogger)
 }
 
 type Logger interface {
@@ -27,8 +23,12 @@ type Logger interface {
 }
 
 // Log implements Logger
-type log struct {
-	l *otelzap.SugaredLogger
+type stdLogger struct {
+	*otelzap.SugaredLogger
+}
+
+func Log(msg string, keyvals ...interface{}) {
+	global.Infow(msg, keyvals...)
 }
 
 // NewLogger returns an error on hardware error.
@@ -40,11 +40,11 @@ func NewLogger() (Logger, error) {
 
 	otelzap.ReplaceGlobals(otelLogger)
 
-	return log{
-		l: sugar,
+	return stdLogger{
+		SugaredLogger: sugar,
 	}, err
 }
 
-func (log log) Log(ctx context.Context, msg string, keyvals ...interface{}) {
-	log.l.InfowContext(ctx, msg, keyvals...)
+func (log stdLogger) Log(ctx context.Context, msg string, keyvals ...interface{}) {
+	log.InfowContext(ctx, msg, keyvals...)
 }
