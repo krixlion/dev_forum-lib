@@ -9,6 +9,7 @@ require (
 	github.com/krixlion/dev_forum-rabbitmq v0.0.0-20230212211448-d0b71a52cf4b
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rabbitmq/amqp091-go v1.7.0
+	github.com/spf13/afero v1.9.5
 	github.com/stretchr/testify v1.8.1
 	github.com/uptrace/opentelemetry-go-extra/otelzap v0.1.21
 	go.opentelemetry.io/otel v1.13.0
@@ -35,7 +36,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.39.0 // indirect
