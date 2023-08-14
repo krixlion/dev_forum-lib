@@ -23,13 +23,22 @@ func LoadX509KeyPair(certFilePath, keyFilePath string) (tls.Certificate, error) 
 	return tls.X509KeyPair(certPEMBlock, keyPEMBlock)
 }
 
-// LoadCA loads CA certificate from given path and returns it or a non-nil error.
+// LoadCaPool loads CA certificate from given path and returns
+// a certPool containing it or a non-nil error.
 // The file can be mocked using lib/fs package.
-func LoadCA(path string) (*x509.Certificate, error) {
+func LoadCaPool(path string) (*x509.CertPool, error) {
 	pemServerCA, err := fs.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return x509.ParseCertificate(pemServerCA)
+	cert, err := x509.ParseCertificate(pemServerCA)
+	if err != nil {
+		return nil, err
+	}
+
+	caPool := x509.NewCertPool()
+	caPool.AddCert(cert)
+
+	return caPool, nil
 }
