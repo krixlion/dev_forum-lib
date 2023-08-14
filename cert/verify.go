@@ -13,7 +13,14 @@ import (
 //
 // This function checks only if client's cert was provided,
 // and whether DNSNames contain given hostname.
-func VerifyClientTLS(tlsInfo credentials.TLSInfo, hostname string) error {
+//
+// Certificate is only propagated through context if grpc.Creds() is used.
+func VerifyClientTLS(ctx context.Context, hostname string) error {
+	tlsInfo, err := infoFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	if len(tlsInfo.State.VerifiedChains) < 1 {
 		return errors.New("client certificate not found")
 	}
@@ -23,9 +30,9 @@ func VerifyClientTLS(tlsInfo credentials.TLSInfo, hostname string) error {
 	return cert.VerifyHostname(hostname)
 }
 
-// InfoFromContext returns TLS credentials extracted from handler's context or a non-nil err.
+// infoFromContext returns TLS credentials extracted from handler's context or a non-nil err.
 // Credentials are only propagated through context if grpc.Creds() is used.
-func InfoFromContext(ctx context.Context) (credentials.TLSInfo, error) {
+func infoFromContext(ctx context.Context) (credentials.TLSInfo, error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
 		return credentials.TLSInfo{}, errors.New("failed to get peer info")
