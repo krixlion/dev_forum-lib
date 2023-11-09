@@ -31,12 +31,12 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		resource.WithTelemetrySDK(),
 		resource.WithHost(),
 		resource.WithAttributes(
-			// the service name used to display traces in backends
+			// The service name used to display traces in backends.
 			semconv.ServiceNameKey.String(serviceName),
 		),
 	)
 	if err != nil {
-		logging.Log("Failed to create resource, err: %s", err)
+		logging.Log("Failed to create resource", "err", err)
 		return nil, err
 	}
 
@@ -51,12 +51,12 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		otlpmetricgrpc.WithEndpoint(otelAgentAddr),
 	)
 	if err != nil {
-		logging.Log("Failed to create the collector metric exporter, err: %s", err)
+		logging.Log("Failed to create the collector metric exporter", "err", err)
 	}
 
 	promExporter, err := prometheus.New()
 	if err != nil {
-		logging.Log("Failed to create the prometheus metric exporter, err: %s", err)
+		logging.Log("Failed to create the prometheus metric exporter", "err", err)
 	}
 
 	meterProvider := sdkmetric.NewMeterProvider(
@@ -76,11 +76,9 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		otlptracegrpc.WithEndpoint(otelAgentAddr),
 		otlptracegrpc.WithDialOption(grpc.WithBlock()))
 
-	// sctx, cancel := context.WithTimeout(ctx, time.Second)
-	// defer cancel()
 	traceExp, err := otlptrace.New(ctx, traceClient)
 	if err != nil {
-		logging.Log("Failed to create the collector trace exporter, err: %s", err)
+		logging.Log("Failed to create the collector trace exporter", "err", err)
 		return nil, err
 	}
 
@@ -91,7 +89,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		sdktrace.WithSpanProcessor(bsp),
 	)
 
-	// set global propagator to tracecontext (the default is no-op).
+	// Set global propagator to tracecontext (the default is no-op).
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	otel.SetTracerProvider(tracerProvider)
 	go func() {
@@ -115,7 +113,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		if err := traceExp.Shutdown(ctx); err != nil {
 			otel.Handle(err)
 		}
-		// pushes any last exports to the receiver
+		// Pushes any last exports to the receiver.
 		if err := meterProvider.Shutdown(ctx); err != nil {
 			otel.Handle(err)
 		}
