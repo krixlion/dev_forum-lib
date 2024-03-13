@@ -36,7 +36,6 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		),
 	)
 	if err != nil {
-		logging.Log("Failed to create resource", "err", err)
 		return nil, err
 	}
 
@@ -51,12 +50,12 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		otlpmetricgrpc.WithEndpoint(otelAgentAddr),
 	)
 	if err != nil {
-		logging.Log("Failed to create the collector metric exporter", "err", err)
+		return nil, err
 	}
 
 	promExporter, err := prometheus.New()
 	if err != nil {
-		logging.Log("Failed to create the prometheus metric exporter", "err", err)
+		return nil, err
 	}
 
 	meterProvider := sdkmetric.NewMeterProvider(
@@ -78,7 +77,6 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 
 	traceExp, err := otlptrace.New(ctx, traceClient)
 	if err != nil {
-		logging.Log("Failed to create the collector trace exporter", "err", err)
 		return nil, err
 	}
 
@@ -95,9 +93,9 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	go func() {
 		logging.Log("Serving metrics at localhost:2223/metrics")
 		http.Handle("/metrics", promhttp.Handler())
-		err := http.ListenAndServe(":2223", nil)
-		if err != nil {
-			logging.Log("Failed serving http", "err", err)
+
+		if err := http.ListenAndServe(":2223", nil); err != nil {
+			logging.Log("Failed to serve metrics", "err", err)
 			return
 		}
 	}()
