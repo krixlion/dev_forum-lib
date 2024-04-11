@@ -146,9 +146,9 @@ func TestDispatcher_Run(t *testing.T) {
 		after := time.Now()
 		stopTime := after.Sub(before)
 
-		// If time needed for Run to return was longer than a millisecond or unexpected error was returned.
+		// Since dispatcher id not doing any work, shutdown should happen near instantly.
 		if stopTime > time.Millisecond {
-			t.Errorf("Run did not stop on context cancellation\n Time needed for func to return: %v", stopTime.Seconds())
+			t.Errorf("Run did not return on context cancellation\n Time needed for func to return: %v", stopTime.Seconds())
 			return
 		}
 	})
