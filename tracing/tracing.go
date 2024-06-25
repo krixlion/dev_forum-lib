@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -68,7 +67,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 			),
 		),
 	)
-	global.SetMeterProvider(meterProvider)
+	otel.SetMeterProvider(meterProvider)
 
 	traceClient := otlptracegrpc.NewClient(
 		otlptracegrpc.WithInsecure(),
