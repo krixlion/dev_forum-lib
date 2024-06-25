@@ -13,7 +13,6 @@ import (
 )
 
 func Test_messageFromEvent(t *testing.T) {
-
 	jsonArticle := gentest.RandomJSONArticle(3, 5)
 	e := event.Event{
 		AggregateId: "article",
