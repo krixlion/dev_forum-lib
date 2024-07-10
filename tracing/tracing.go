@@ -48,8 +48,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		otelAgentAddr = "0.0.0.0:4317"
 	}
 
-	metricExp, err := otlpmetricgrpc.New(
-		ctx,
+	metricExp, err := otlpmetricgrpc.New(ctx,
 		otlpmetricgrpc.WithInsecure(),
 		otlpmetricgrpc.WithEndpoint(otelAgentAddr),
 	)
@@ -65,13 +64,9 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	meterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithReader(promExporter),
-		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
-				metricExp,
-				sdkmetric.WithInterval(2*time.Second),
-			),
-		),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExp, sdkmetric.WithInterval(2*time.Second))),
 	)
+
 	otel.SetMeterProvider(meterProvider)
 
 	traceClient := otlptracegrpc.NewClient(
@@ -84,16 +79,16 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		return nil, err
 	}
 
-	bsp := sdktrace.NewBatchSpanProcessor(traceExp)
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithResource(resource),
-		sdktrace.WithSpanProcessor(bsp),
+		sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(traceExp)),
 	)
 
 	// Set global propagator to tracecontext (the default is no-op).
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	otel.SetTracerProvider(tracerProvider)
+
 	go func() {
 		logging.Log("Serving metrics at localhost:2223/metrics")
 		http.Handle("/metrics", promhttp.Handler())
