@@ -20,7 +20,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc"
 )
 
 // InitProvider initializes the global meter and tracer providers.
@@ -78,7 +77,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	traceClient := otlptracegrpc.NewClient(
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(otelAgentAddr),
-		otlptracegrpc.WithDialOption(grpc.WithBlock()))
+	)
 
 	traceExp, err := otlptrace.New(ctx, traceClient)
 	if err != nil {
