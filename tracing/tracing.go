@@ -23,6 +23,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// InitProvider initializes the global meter and tracer providers.
+// Returns a func used to shutdown exporters running in the background or an error if the initialization failed.
+// Metrics are exported to Prometheus by exposing an insecure localhost:2223/metrics endpoint.
+// Traces are exported to OTEL exporter.
+// Exporter's URL is read from the OTEL_EXPORTER_OTLP_ENDPOINT environment variable.
+// If OTEL_EXPORTER_OTLP_ENDPOINT is unset then it is assumed the URL is 0.0.0.0:4317.
 func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	resource, err := resource.New(ctx,
 		resource.WithFromEnv(),
@@ -125,6 +131,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	}, nil
 }
 
+// SetSpanErr records given error to the span and sets the span's status as Error with err.Error() as the description.
 func SetSpanErr(span trace.Span, err error) {
 	span.RecordError(err)
 	span.SetStatus(codes.Error, err.Error())
