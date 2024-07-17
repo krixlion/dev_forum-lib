@@ -142,7 +142,7 @@ func TestDispatcher_Run(t *testing.T) {
 
 		before := time.Now()
 		cancel()
-		errg.Wait()
+		errg.Wait() //nolint:golint,unused
 		after := time.Now()
 		stopTime := after.Sub(before)
 
