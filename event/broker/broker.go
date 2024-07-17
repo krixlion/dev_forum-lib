@@ -28,25 +28,18 @@ func NewBroker(mq *rabbitmq.RabbitMQ, logger logging.Logger, tracer trace.Tracer
 
 // ResilientPublish returns an error only if the queue is full or if it failed to serialize the event.
 func (b *Broker) ResilientPublish(e event.Event) error {
-	msg := messageFromEvent(e)
-	if err := b.messageQueue.Enqueue(msg); err != nil {
-		return err
-	}
-	return nil
+	return b.messageQueue.Enqueue(messageFromEvent(e))
 }
 
 func (b *Broker) Publish(ctx context.Context, e event.Event) error {
 	ctx, span := b.tracer.Start(ctx, "broker.Publish", trace.WithSpanKind(trace.SpanKindProducer))
 	defer span.End()
 
-	msg := messageFromEvent(e)
-	return b.messageQueue.Publish(ctx, msg)
+	return b.messageQueue.Publish(ctx, messageFromEvent(e))
 }
 
 func (b *Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (<-chan event.Event, error) {
-	route := routeFromEvent(eventType)
-
-	messages, err := b.messageQueue.Consume(ctx, queue, route)
+	messages, err := b.messageQueue.Consume(ctx, queue, routeFromEvent(eventType))
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +50,8 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 		defer span.End()
 
 		for message := range messages {
-			event := event.Event{}
-			err := json.Unmarshal(message.Body, &event)
-			if err != nil {
+			var event event.Event
+			if err := json.Unmarshal(message.Body, &event); err != nil {
 				tracing.SetSpanErr(span, err)
 				b.logger.Log(ctx, "Failed to process message", "err", err)
 				continue
