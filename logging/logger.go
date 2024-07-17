@@ -8,13 +8,12 @@ import (
 )
 
 func init() {
-	logger, err := zap.NewProduction(zap.AddCaller(), zap.AddCallerSkip(2))
+	logger, err := NewLogger()
 	if err != nil {
 		panic(err)
 	}
 
-	otelLogger := otelzap.New(logger)
-	otelzap.ReplaceGlobals(otelLogger)
+	otelzap.ReplaceGlobals(logger.(stdLogger).Desugar())
 }
 
 type Logger interface {
