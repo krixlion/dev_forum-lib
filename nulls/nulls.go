@@ -15,6 +15,7 @@ var _ logging.Logger = (*NullLogger)(nil)
 type NullLogger struct{}
 
 func (NullLogger) Log(context.Context, string, ...any) {}
+func (NullLogger) Sync() error                         { return nil }
 
 var _ trace.Tracer = (*NullTracer)(nil)
 

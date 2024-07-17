@@ -7,44 +7,45 @@ import (
 	"go.uber.org/zap"
 )
 
-var global stdLogger
-
 func init() {
-	l, err := NewLogger()
+	logger, err := zap.NewProduction(zap.AddCaller(), zap.AddCallerSkip(2))
 	if err != nil {
 		panic(err)
 	}
 
-	global = l.(stdLogger)
+	otelLogger := otelzap.New(logger)
+	otelzap.ReplaceGlobals(otelLogger)
 }
 
 type Logger interface {
 	Log(ctx context.Context, msg string, keyvals ...interface{})
+
+	// Sync flushes the buffer and writes any pending logs.
+	Sync() error
 }
 
-// Log implements Logger
+func Log(msg string, keyvals ...interface{}) {
+	otelzap.S().Infow(msg, keyvals...)
+}
+
+// NewLogger returns a new logger safe for concurrent use
+// Returns an error on hardware error.
+func NewLogger() (Logger, error) {
+	logger, err := zap.NewProduction(zap.AddCaller(), zap.AddCallerSkip(2))
+	if err != nil {
+		return nil, err
+	}
+
+	return stdLogger{
+		SugaredLogger: otelzap.New(logger).Sugar(),
+	}, nil
+}
+
+// stdLogger is a wrapper for otelzap.SugaredLogger and implements Logger interface.
 type stdLogger struct {
 	*otelzap.SugaredLogger
 }
 
-func Log(msg string, keyvals ...interface{}) {
-	global.Infow(msg, keyvals...)
-}
-
-// NewLogger returns an error on hardware error.
-func NewLogger() (Logger, error) {
-	logger, err := zap.NewProduction(zap.AddCaller(), zap.AddCallerSkip(2))
-	otelLogger := otelzap.New(logger)
-	sugar := otelLogger.Sugar()
-	defer sugar.Sync()
-
-	otelzap.ReplaceGlobals(otelLogger)
-
-	return stdLogger{
-		SugaredLogger: sugar,
-	}, err
-}
-
-func (log stdLogger) Log(ctx context.Context, msg string, keyvals ...interface{}) {
-	log.InfowContext(ctx, msg, keyvals...)
+func (logger stdLogger) Log(ctx context.Context, msg string, keyvals ...interface{}) {
+	logger.InfowContext(ctx, msg, keyvals...)
 }
