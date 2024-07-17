@@ -2,18 +2,14 @@ package tracing
 
 import (
 	"context"
-	"net/http"
-	"os"
+	"errors"
 	"time"
 
-	"github.com/krixlion/dev_forum-lib/logging"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -22,14 +18,16 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// InitProvider initializes the global meter and tracer providers.
-// Returns a func used to shutdown exporters running in the background or an error if the initialization failed.
-// Metrics are exported to Prometheus by exposing an insecure localhost:2223/metrics endpoint.
-// Traces are exported to OTEL exporter.
-// Exporter's URL is read from the OTEL_EXPORTER_OTLP_ENDPOINT environment variable.
-// If OTEL_EXPORTER_OTLP_ENDPOINT is unset then it is assumed the URL is 0.0.0.0:4317.
-func InitProvider(ctx context.Context, serviceName string) (func(), error) {
-	resource, err := resource.New(ctx,
+// InitProvider initializes the global meter and tracer providers and returns a func used
+// to close exporters running in the background or an error if the initialization failed.
+// Traces and metrics are exported to OTel Collector using gRPC.
+// Takes a service name to use as a label for exported resource and address to the OTel Collector.
+func InitProvider(ctx context.Context, serviceName, otelColelctorAddr string) (func() error, error) {
+	if otelColelctorAddr == "" {
+		return nil, errors.New("failed to init providers: missing otel-collector url ")
+	}
+
+	rsc, err := resource.New(ctx,
 		resource.WithFromEnv(),
 		resource.WithProcess(),
 		resource.WithTelemetrySDK(),
@@ -43,27 +41,21 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 		return nil, err
 	}
 
-	otelAgentAddr, ok := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	if !ok {
-		otelAgentAddr = "0.0.0.0:4317"
+	rsc, err = resource.Merge(resource.Default(), rsc)
+	if err != nil {
+		return nil, err
 	}
 
 	metricExp, err := otlpmetricgrpc.New(ctx,
 		otlpmetricgrpc.WithInsecure(),
-		otlpmetricgrpc.WithEndpoint(otelAgentAddr),
+		otlpmetricgrpc.WithEndpoint(otelColelctorAddr),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	promExporter, err := prometheus.New()
-	if err != nil {
-		return nil, err
-	}
-
 	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithResource(resource),
-		sdkmetric.WithReader(promExporter),
+		sdkmetric.WithResource(rsc),
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExp, sdkmetric.WithInterval(2*time.Second))),
 	)
 
@@ -71,7 +63,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 
 	traceClient := otlptracegrpc.NewClient(
 		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(otelAgentAddr),
+		otlptracegrpc.WithEndpoint(otelColelctorAddr),
 	)
 
 	traceExp, err := otlptrace.New(ctx, traceClient)
@@ -81,7 +73,7 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithResource(resource),
+		sdktrace.WithResource(rsc),
 		sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(traceExp)),
 	)
 
@@ -89,44 +81,16 @@ func InitProvider(ctx context.Context, serviceName string) (func(), error) {
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	otel.SetTracerProvider(tracerProvider)
 
-	go func() {
-		logging.Log("Serving metrics at localhost:2223/metrics")
-		http.Handle("/metrics", promhttp.Handler())
-
-		if err := http.ListenAndServe(":2223", nil); err != nil {
-			logging.Log("Failed to serve metrics", "err", err)
-			return
-		}
-	}()
-
-	return func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-
-		if err := metricExp.Shutdown(ctx); err != nil {
-			otel.Handle(err)
-		}
-
-		if err := traceExp.Shutdown(ctx); err != nil {
-			otel.Handle(err)
-		}
-		// Pushes any last exports to the receiver.
-		if err := meterProvider.Shutdown(ctx); err != nil {
-			otel.Handle(err)
-		}
-
-		if err := promExporter.Shutdown(ctx); err != nil {
-			otel.Handle(err)
-		}
-
-		if err := tracerProvider.Shutdown(ctx); err != nil {
-			otel.Handle(err)
-		}
+	return func() error {
+		return errors.Join(metricExp.Shutdown(ctx), traceExp.Shutdown(ctx), meterProvider.Shutdown(ctx), tracerProvider.Shutdown(ctx))
 	}, nil
 }
 
 // SetSpanErr records given error to the span and sets the span's status as Error with err.Error() as the description.
+// If the span is not recording or given err is nil then this func will not do anything.
 func SetSpanErr(span trace.Span, err error) {
-	span.RecordError(err)
-	span.SetStatus(codes.Error, err.Error())
+	if span.IsRecording() && err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 }
