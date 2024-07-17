@@ -141,10 +141,11 @@ func TestDispatcher_Run(t *testing.T) {
 		})
 
 		before := time.Now()
+
 		cancel()
 		errg.Wait() //nolint:golint,unused
-		after := time.Now()
-		stopTime := after.Sub(before)
+
+		stopTime := time.Since(before)
 
 		// Since dispatcher id not doing any work, shutdown should happen near instantly.
 		if stopTime > time.Millisecond {
