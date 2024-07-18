@@ -63,7 +63,3 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 
 	return events, nil
 }
-
-func (b *Broker) Close() error {
-	return b.messageQueue.Close()
-}

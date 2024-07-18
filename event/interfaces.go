@@ -2,7 +2,6 @@ package event
 
 import (
 	"context"
-	"io"
 )
 
 type Broker interface {
@@ -11,13 +10,10 @@ type Broker interface {
 }
 
 type Consumer interface {
-	io.Closer
-
 	Consume(ctx context.Context, queue string, eventType EventType) (<-chan Event, error)
 }
 
 type Publisher interface {
-	io.Closer
 
 	// Exchanges and queues are maintained internally depending on the type of event.
 	Publish(context.Context, Event) error
