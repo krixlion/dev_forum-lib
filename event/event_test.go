@@ -16,7 +16,8 @@ func Test_MakeEvent(t *testing.T) {
 	type args struct {
 		aggregateId AggregateId
 		eType       EventType
-		data        interface{}
+		body        interface{}
+		metadata    map[string]string
 	}
 	tests := []struct {
 		name string
@@ -24,11 +25,12 @@ func Test_MakeEvent(t *testing.T) {
 		want Event
 	}{
 		{
-			name: "Test is correctly serializes ArticleDeleted event with random data",
+			name: "Test correctly serializes ArticleDeleted event with random data",
 			args: args{
 				aggregateId: ArticleAggregate,
 				eType:       ArticleDeleted,
-				data:        randString,
+				body:        randString,
+				metadata:    map[string]string{"test": randString},
 			},
 			want: Event{
 				AggregateId: ArticleAggregate,
@@ -40,15 +42,16 @@ func Test_MakeEvent(t *testing.T) {
 					}
 					return data
 				}(),
+				Metadata:  map[string]string{"test": randString},
 				Timestamp: time.Now(),
 			},
 		},
 		{
-			name: "Test is correctly serializes ArticleUpdated event with random data",
+			name: "Test correctly serializes ArticleUpdated event with random data",
 			args: args{
 				aggregateId: ArticleAggregate,
 				eType:       ArticleUpdated,
-				data:        randArticle,
+				body:        randArticle,
 			},
 			want: Event{
 				AggregateId: ArticleAggregate,
@@ -66,13 +69,13 @@ func Test_MakeEvent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MakeEvent(tt.args.aggregateId, tt.args.eType, tt.args.data)
+			got, err := MakeEvent(tt.args.aggregateId, tt.args.eType, tt.args.body, tt.args.metadata)
 			if err != nil {
 				t.Errorf("MakeEvent(): error = %v", err)
 				return
 			}
 
-			if !cmp.Equal(got, tt.want, cmpopts.EquateApproxTime(time.Millisecond*5)) {
+			if !cmp.Equal(got, tt.want, cmpopts.EquateApproxTime(time.Millisecond)) {
 				t.Errorf("MakeEvent():\n got = %+v\n want = %+v\n diff = %+v\n", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
