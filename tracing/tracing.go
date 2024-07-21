@@ -94,3 +94,17 @@ func SetSpanErr(span trace.Span, err error) {
 		span.SetStatus(codes.Error, err.Error())
 	}
 }
+
+// ExtractMetadataFromContext extracts traceparent id from given context and
+// returns it in a map following a format {"traceparent": "<id>"}.
+func ExtractMetadataFromContext(ctx context.Context) map[string]string {
+	metadata := map[string]string{}
+	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(metadata))
+	return metadata
+}
+
+// InjectMetadataIntoContext takes in a map following a format {"traceparent": "<id>"}
+// and returns a new context with the metadata appended.
+func InjectMetadataIntoContext(ctx context.Context, metadata map[string]string) context.Context {
+	return otel.GetTextMapPropagator().Extract(ctx, propagation.MapCarrier(metadata))
+}
