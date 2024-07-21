@@ -19,6 +19,7 @@ func Test_messageFromEvent(t *testing.T) {
 		Type:        event.ArticleCreated,
 		Body:        jsonArticle,
 		Timestamp:   time.Now(),
+		Metadata:    map[string]string{},
 	}
 	jsonEvent, err := json.Marshal(e)
 	if err != nil {
@@ -38,6 +39,7 @@ func Test_messageFromEvent(t *testing.T) {
 				Body:        jsonEvent,
 				ContentType: "application/json",
 				Timestamp:   e.Timestamp,
+				Headers:     map[string]interface{}{},
 				Route: rabbitmq.Route{
 					ExchangeName: "article",
 					ExchangeType: "topic",
@@ -61,7 +63,6 @@ func Test_messageFromEvent(t *testing.T) {
 
 			if !cmp.Equal(got, tt.want) {
 				t.Errorf("messageFromEvent():\n got = %v\n want = %v", got, tt.want)
-				return
 			}
 		})
 	}

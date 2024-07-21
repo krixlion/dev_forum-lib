@@ -6,7 +6,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/krixlion/dev_forum-rabbitmq v0.0.0-20240721133827-de3ca6009f0e
+	github.com/krixlion/dev_forum-rabbitmq v0.0.0-20240721171527-fb349c5c824d
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.9.0
