@@ -2,6 +2,7 @@ package broker
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,26 +13,43 @@ import (
 
 // messageFromEvent returns a message suitable for pub/sub methods and
 // a non-nil error if the event could not be marshaled into JSON.
-func messageFromEvent(e event.Event) rabbitmq.Message {
+func messageFromEvent(e event.Event) (rabbitmq.Message, error) {
 	body, err := json.Marshal(e)
 	if err != nil {
-		panic(fmt.Sprintf("Invalid JSON tags on event.Event type, err: %v", err))
+		return rabbitmq.Message{}, fmt.Errorf("invalid JSON tags on event.Event, err: %v", err)
+	}
+
+	r, err := routeFromEvent(e.Type)
+	if err != nil {
+		return rabbitmq.Message{}, err
 	}
 
 	return rabbitmq.Message{
 		Body:        body,
 		ContentType: rabbitmq.ContentTypeJson,
-		Route:       routeFromEvent(e.Type),
+		Route:       r,
 		Timestamp:   e.Timestamp,
-	}
+	}, nil
 }
 
-func routeFromEvent(eType event.EventType) rabbitmq.Route {
-	v := strings.Split(string(eType), "-")
+func routeFromEvent(eType event.EventType) (rabbitmq.Route, error) {
+	noun, action, found := strings.Cut(string(eType), "-")
+	if !found {
+		return rabbitmq.Route{}, errors.New("event type does not follow {noun}-{action} format")
+	}
 
 	return rabbitmq.Route{
-		ExchangeName: v[0],
+		ExchangeName: noun,
 		ExchangeType: amqp.ExchangeTopic,
-		RoutingKey:   fmt.Sprintf("%s.event.%s", v[0], v[1]),
+		RoutingKey:   noun + ".event." + action,
+	}, nil
+}
+
+func eventFromMessage(msg rabbitmq.Message) (event.Event, error) {
+	var e event.Event
+	if err := json.Unmarshal(msg.Body, &e); err != nil {
+		return event.Event{}, err
 	}
+
+	return e, nil
 }
