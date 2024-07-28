@@ -39,7 +39,7 @@ func Test_messageFromEvent(t *testing.T) {
 				Body:        jsonEvent,
 				ContentType: "application/json",
 				Timestamp:   e.Timestamp,
-				Headers:     map[string]interface{}{},
+				Headers:     map[string]string{},
 				Route: rabbitmq.Route{
 					ExchangeName: "article",
 					ExchangeType: "topic",

@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/krixlion/dev_forum-lib/event"
 	"github.com/krixlion/dev_forum-lib/logging"
@@ -77,13 +78,13 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 			select {
 			case <-ctx.Done():
 				return
-			case message := <-messages:
+			case msg := <-messages:
 				func() {
-					ctx, span := b.tracer.Start(ctx, "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
+					ctx, span := b.tracer.Start(rabbitmq.ExtractMessageHeaders(ctx, msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
 					defer span.End()
 
-					e, err := eventFromMessage(message)
-					if err != nil {
+					e := event.Event{Metadata: msg.Headers}
+					if err := json.Unmarshal(msg.Body, &e); err != nil {
 						tracing.SetSpanErr(span, err)
 						b.logger.Log(ctx, "Failed to process message", "err", err)
 						return

@@ -24,17 +24,12 @@ func messageFromEvent(e event.Event) (rabbitmq.Message, error) {
 		return rabbitmq.Message{}, err
 	}
 
-	headers := map[string]interface{}{}
-	for k, v := range e.Metadata {
-		headers[k] = v
-	}
-
 	return rabbitmq.Message{
 		Body:        body,
 		ContentType: rabbitmq.ContentTypeJson,
 		Route:       r,
 		Timestamp:   e.Timestamp,
-		Headers:     headers,
+		Headers:     e.Metadata,
 	}, nil
 }
 
@@ -49,21 +44,4 @@ func routeFromEvent(eType event.EventType) (rabbitmq.Route, error) {
 		ExchangeType: amqp.ExchangeTopic,
 		RoutingKey:   noun + ".event." + action,
 	}, nil
-}
-
-func eventFromMessage(msg rabbitmq.Message) (event.Event, error) {
-	e := event.Event{Metadata: map[string]string{}}
-	if err := json.Unmarshal(msg.Body, &e); err != nil {
-		return event.Event{}, err
-	}
-
-	for k, v := range msg.Headers {
-		v, ok := v.(string)
-		if !ok {
-			continue
-		}
-		e.Metadata[k] = v
-	}
-
-	return e, nil
 }
