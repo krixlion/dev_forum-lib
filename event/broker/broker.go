@@ -57,7 +57,7 @@ func (b *Broker) Publish(ctx context.Context, e event.Event) error {
 }
 
 func (b *Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (<-chan event.Event, error) {
-	ctx, span := b.tracer.Start(ctx, "broker.Consume init", trace.WithSpanKind(trace.SpanKindConsumer))
+	ctx, span := b.tracer.Start(ctx, "broker.Consume init")
 	defer span.End()
 
 	r, err := routeFromEvent(eventType)
@@ -80,7 +80,7 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 				return
 			case msg := <-messages:
 				func() {
-					ctx, span := b.tracer.Start(rabbitmq.ExtractMessageHeaders(ctx, msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
+					ctx, span := b.tracer.Start(rabbitmq.ExtractMessageHeaders(context.Background(), msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
 					defer span.End()
 
 					e := event.Event{Metadata: msg.Headers}
