@@ -17,7 +17,7 @@ func NewUnaryHandler() UnaryHandler {
 
 func (m UnaryHandler) GetMock() grpc.UnaryHandler {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		args := m.Called()
+		args := m.Called(ctx, req)
 		return args.Get(0), args.Error(1)
 	}
 }
