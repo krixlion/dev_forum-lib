@@ -50,6 +50,9 @@ func (b *Broker) Publish(ctx context.Context, e event.Event) error {
 }
 
 func (b *Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (<-chan event.Event, error) {
+	ctx, span := b.tracer.Start(ctx, "broker.Consume init", trace.WithSpanKind(trace.SpanKindConsumer))
+	defer span.End()
+
 	r, err := routeFromEvent(eventType)
 	if err != nil {
 		return nil, err
@@ -62,20 +65,26 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 
 	events := make(chan event.Event)
 	go func() {
-		ctx, span := b.tracer.Start(ctx, "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
-		defer span.End()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case message := <-messages:
+				func() {
+					ctx, span := b.tracer.Start(ctx, "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
+					defer span.End()
 
-		for message := range messages {
-			e, err := eventFromMessage(message)
-			if err != nil {
-				tracing.SetSpanErr(span, err)
-				b.logger.Log(ctx, "Failed to process message", "err", err)
-				continue
+					e, err := eventFromMessage(message)
+					if err != nil {
+						tracing.SetSpanErr(span, err)
+						b.logger.Log(ctx, "Failed to process message", "err", err)
+						return
+					}
+
+					otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(e.Metadata))
+					events <- e
+				}()
 			}
-
-			otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(e.Metadata))
-
-			events <- e
 		}
 	}()
 
