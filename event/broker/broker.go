@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Broker is a wrapper for rabbitmq.RabbitMQ
+// Broker is a wrapper for rabbitmq.RabbitMQ.
 type Broker struct {
 	messageQueue *rabbitmq.RabbitMQ
 	logger       logging.Logger
@@ -43,10 +43,16 @@ func (b *Broker) Publish(ctx context.Context, e event.Event) error {
 
 	msg, err := messageFromEvent(e)
 	if err != nil {
+		tracing.SetSpanErr(span, err)
 		return err
 	}
 
-	return b.messageQueue.Publish(ctx, msg)
+	if err := b.messageQueue.Publish(ctx, msg); err != nil {
+		tracing.SetSpanErr(span, err)
+		return err
+	}
+
+	return nil
 }
 
 func (b *Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (<-chan event.Event, error) {
@@ -55,11 +61,13 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 
 	r, err := routeFromEvent(eventType)
 	if err != nil {
+		tracing.SetSpanErr(span, err)
 		return nil, err
 	}
 
 	messages, err := b.messageQueue.Consume(ctx, queue, r)
 	if err != nil {
+		tracing.SetSpanErr(span, err)
 		return nil, err
 	}
 
