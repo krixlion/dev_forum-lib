@@ -24,4 +24,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run tests
         run: |
-            go test ./... -race -timeout=10s
+            go test -coverprofile cover.out ./... -race -timeout=10s
+      
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          file: cover.out
+          format: golang
