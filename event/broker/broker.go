@@ -83,7 +83,7 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 					ctx, span := b.tracer.Start(rabbitmq.ExtractMessageHeaders(context.Background(), msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
 					defer span.End()
 
-					e := event.Event{Metadata: msg.Headers}
+					e := event.Event{}
 					if err := json.Unmarshal(msg.Body, &e); err != nil {
 						tracing.SetSpanErr(span, err)
 						b.logger.Log(ctx, "Failed to process message", "err", err)
