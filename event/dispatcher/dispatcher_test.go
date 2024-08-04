@@ -2,27 +2,16 @@ package dispatcher
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/krixlion/dev_forum-lib/event"
-	"github.com/krixlion/dev_forum-lib/internal/gentest"
 	"github.com/krixlion/dev_forum-lib/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/sync/errgroup"
 )
-
-func containsHandler(handlers []event.Handler, target event.Handler) bool {
-	for _, handler := range handlers {
-		if cmp.Equal(handler, target, cmpopts.IgnoreUnexported(mock.Mock{})) {
-			return true
-		}
-	}
-	return false
-}
 
 func TestDispatcher_Subscribe(t *testing.T) {
 	tests := []struct {
@@ -42,7 +31,7 @@ func TestDispatcher_Subscribe(t *testing.T) {
 			dispatcher.Subscribe(tt.eType, tt.handlers...)
 
 			for _, handler := range tt.handlers {
-				if !containsHandler(dispatcher.handlers[tt.eType], handler) {
+				if !slices.Contains(dispatcher.handlers[tt.eType], handler) {
 					t.Errorf("event.Handler was not registered succesfully")
 				}
 			}
