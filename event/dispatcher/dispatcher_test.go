@@ -147,7 +147,7 @@ func TestDispatcher_Run(t *testing.T) {
 
 		stopTime := time.Since(before)
 
-		// Since dispatcher id not doing any work, shutdown should happen near instantly.
+		// Since dispatcher is not doing any work, shutdown should happen near instantly.
 		if stopTime > time.Millisecond {
 			t.Errorf("Run did not return on context cancellation\n Time needed for func to return: %v", stopTime.Seconds())
 			return
