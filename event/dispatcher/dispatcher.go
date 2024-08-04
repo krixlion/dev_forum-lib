@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/krixlion/dev_forum-lib/chans"
 	"github.com/krixlion/dev_forum-lib/event"
 )
 
@@ -34,7 +35,7 @@ func NewDispatcher(maxWorkers int) *Dispatcher {
 func (d *Dispatcher) AddEventProviders(providers ...<-chan event.Event) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.events = mergeChans(providers...)
+	d.events = chans.FanIn(providers...)
 }
 
 // Run blocks until the context is cancelled.
@@ -77,22 +78,4 @@ func (d *Dispatcher) Dispatch(e event.Event) {
 			<-limit
 		}(handler)
 	}
-}
-
-func mergeChans(channels ...<-chan event.Event) <-chan event.Event {
-	out := make(chan event.Event)
-
-	wg := sync.WaitGroup{}
-	wg.Add(len(channels))
-
-	for _, c := range channels {
-		go func(c <-chan event.Event) {
-			for v := range c {
-				out <- v
-			}
-			wg.Done()
-		}(c)
-	}
-
-	return out
 }

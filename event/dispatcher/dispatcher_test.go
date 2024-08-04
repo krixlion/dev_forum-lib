@@ -8,7 +8,6 @@ import (
 
 	"github.com/krixlion/dev_forum-lib/event"
 	"github.com/krixlion/dev_forum-lib/mocks"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/sync/errgroup"
 )
@@ -34,50 +33,6 @@ func TestDispatcher_Subscribe(t *testing.T) {
 				if !slices.Contains(dispatcher.handlers[tt.eType], handler) {
 					t.Errorf("event.Handler was not registered succesfully")
 				}
-			}
-		})
-	}
-}
-
-func Test_mergeChans(t *testing.T) {
-	tests := []struct {
-		name string
-		want []event.Event
-	}{
-		{
-			name: "Test if receives all events from multiple channels",
-			want: []event.Event{
-				{
-					AggregateId: event.AggregateId(gentest.RandomString(5)),
-				},
-				{
-					AggregateId: event.AggregateId(gentest.RandomString(5)),
-					Type:        event.ArticleDeleted,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			chans := func() (chans []<-chan event.Event) {
-				for _, e := range tt.want {
-					v := make(chan event.Event, 1)
-					v <- e
-					chans = append(chans, v)
-				}
-				return
-			}()
-
-			out := mergeChans(chans...)
-			var got []event.Event
-			for i := 0; i < len(tt.want); i++ {
-				got = append(got, <-out)
-			}
-
-			if !assert.ElementsMatch(t, got, tt.want) {
-				t.Errorf("Events are not equal:\n got = %+v\n want = %+v\n", got, tt.want)
-				return
 			}
 		})
 	}
