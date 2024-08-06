@@ -12,14 +12,9 @@ import (
 func Test_FanIn(t *testing.T) {
 	t.Run("Test returned channel receives all messages from multiple channels", func(t *testing.T) {
 		want := []testtypes.Article{
-			{
-				Id: gentest.RandomString(5),
-			},
-			{
-				Id:     gentest.RandomString(8),
-				UserId: gentest.RandomString(9),
-				Title:  gentest.RandomString(12),
-			},
+			gentest.RandomArticle(5, 10),
+			gentest.RandomArticle(6, 11),
+			gentest.RandomArticle(7, 12),
 		}
 
 		chans := func() []<-chan testtypes.Article {
