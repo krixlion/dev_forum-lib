@@ -38,6 +38,23 @@ func Test_FanIn(t *testing.T) {
 			t.Errorf("FanIn(): messages are not equal:\n got = %+v\n want = %+v\n", got, want)
 		}
 	})
+
+	t.Run("Test returned chan is closed when origin chans are closed", func(t *testing.T) {
+		chans := []chan struct{}{
+			make(chan struct{}),
+			make(chan struct{}),
+		}
+
+		out := FanIn(chans[0], chans[1])
+
+		for _, c := range chans {
+			close(c)
+		}
+
+		if _, ok := <-out; ok {
+			t.Errorf("FanIn(): merged chan is open")
+		}
+	})
 }
 
 func TestNonBlockSend(t *testing.T) {
