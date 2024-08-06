@@ -17,7 +17,7 @@ func FanIn[T any](channels ...<-chan T) <-chan T {
 
 // NonBlockSend tries to send given value through the given channel in a non-blocking manner.
 // If the send would block then this is func aborts the message and do nothing.
-func NonBlockSend[T any](c chan T, v T) {
+func NonBlockSend[T any](c chan<- T, v T) {
 	select {
 	case c <- v:
 	default:
