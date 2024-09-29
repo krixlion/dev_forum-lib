@@ -15,7 +15,7 @@ type Event struct {
 }
 
 // MakeEvent returns an event serialized for general use.
-// Returns an error when bodycannot be marshaled into json.
+// Returns an error when given body cannot be marshaled into json.
 func MakeEvent(aggregateId AggregateId, eType EventType, body interface{}, metadata map[string]string) (Event, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
