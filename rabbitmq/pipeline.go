@@ -41,7 +41,8 @@ func (mq *RabbitMQ) publishPipelined(ctx context.Context, messages <-chan Messag
 			case message := <-messages:
 				limiter <- struct{}{}
 				go func() {
-					ctx, span := mq.opts.tracer.Start(tracing.InjectMetadataIntoContext(ctx, message.Headers), "rabbitmq.publishPipelined", trace.WithSpanKind(trace.SpanKindProducer))
+					ctx := tracing.InjectMetadataIntoContext(ctx, message.Headers)
+					ctx, span := mq.opts.tracer.Start(ctx, "rabbitmq.publishPipelined", trace.WithSpanKind(trace.SpanKindProducer))
 					defer span.End()
 					defer func() { <-limiter }()
 
@@ -52,19 +53,14 @@ func (mq *RabbitMQ) publishPipelined(ctx context.Context, messages <-chan Messag
 						return
 					}
 
-					err = channel.PublishWithContext(ctx,
-						message.ExchangeName, // exchange
-						message.RoutingKey,   // routing key
-						false,                // mandatory
-						false,                // immediate
-						amqp.Publishing{
-							ContentType: string(message.ContentType),
-							Body:        message.Body,
-							Timestamp:   message.Timestamp,
-							Headers:     extractAMQPHeadersFromCtx(ctx),
-						},
-					)
-					if err != nil {
+					p := amqp.Publishing{
+						ContentType: string(message.ContentType),
+						Body:        message.Body,
+						Timestamp:   message.Timestamp,
+						Headers:     extractAMQPHeadersFromCtx(ctx),
+					}
+
+					if err := channel.PublishWithContext(ctx, message.ExchangeName, message.RoutingKey, false, false, p); err != nil {
 						tracing.SetSpanErr(span, err)
 						done(!isConnectionError(err))
 						mq.tryToEnqueue(ctx, message, err, "Failed to publish msg")
@@ -94,7 +90,8 @@ func (mq *RabbitMQ) prepareExchangePipelined(ctx context.Context, msgs <-chan Me
 			case message := <-msgs:
 				limiter <- struct{}{}
 				go func() {
-					ctx, span := mq.opts.tracer.Start(tracing.InjectMetadataIntoContext(ctx, message.Headers), "rabbitmq.prepareExchangePipelined", trace.WithSpanKind(trace.SpanKindProducer))
+					ctx := tracing.InjectMetadataIntoContext(ctx, message.Headers)
+					ctx, span := mq.opts.tracer.Start(ctx, "rabbitmq.prepareExchangePipelined", trace.WithSpanKind(trace.SpanKindProducer))
 					defer span.End()
 					defer func() { <-limiter }()
 
@@ -106,16 +103,7 @@ func (mq *RabbitMQ) prepareExchangePipelined(ctx context.Context, msgs <-chan Me
 						return
 					}
 
-					err = channel.ExchangeDeclare(
-						message.ExchangeName, // name
-						message.ExchangeType, // type
-						true,                 // durable
-						false,                // auto-deleted
-						false,                // internal
-						false,                // no-wait
-						nil,                  // arguments
-					)
-					if err != nil {
+					if err := channel.ExchangeDeclare(message.ExchangeName, message.ExchangeType, true, false, false, false, nil); err != nil {
 						done(!isConnectionError(err))
 						tracing.SetSpanErr(span, err)
 						mq.tryToEnqueue(ctx, message, err, "Failed to declare exchange")

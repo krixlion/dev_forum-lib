@@ -201,16 +201,15 @@ func (mq *RabbitMQ) reDial(ctx context.Context) {
 func (mq *RabbitMQ) dial(ctx context.Context) (err error) {
 	_, span := mq.opts.tracer.Start(ctx, "rabbitmq.dial")
 	defer span.End()
+	defer tracing.SetSpanErr(span, err)
 
 	done, err := mq.breaker.Allow()
 	if err != nil {
-		tracing.SetSpanErr(span, err)
 		return err
 	}
 
 	conn, err := amqp.Dial(mq.url)
 	if err != nil {
-		tracing.SetSpanErr(span, err)
 		done(!isConnectionError(err))
 		return err
 	}
