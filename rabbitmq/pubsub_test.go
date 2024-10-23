@@ -2,8 +2,6 @@ package rabbitmq_test
 
 import (
 	"context"
-	"encoding/json"
-	"math/rand/v2"
 	"os"
 	"strings"
 	"testing"
@@ -11,17 +9,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/joho/godotenv"
+	"github.com/krixlion/dev_forum-lib/internal/gentest"
 	rabbitmq "github.com/krixlion/dev_forum-rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/goleak"
 )
 
-var (
-	port string
-	host string
-	user string
-	pass string
-)
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
+}
 
 func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 	const consumer = "TESTING"
@@ -62,31 +58,12 @@ func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 	return rabbitmq.NewRabbitMQ(consumer, user, pass, host, port, config)
 }
 
-func randomString(length int) string {
-	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	v := make([]rune, length)
-	for i := range v {
-		v[i] = letters[rand.IntN(len(letters))]
-	}
-	return string(v)
-}
-
-func TestMain(m *testing.M) {
-	goleak.VerifyTestMain(m)
-}
-
 func TestPubSub(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping Pub/Sub integration test...")
 	}
 
-	testData := randomString(5)
-	data, err := json.Marshal(testData)
-	if err != nil {
-		t.Fatalf("Failed to marshal string, input: %+v, err: %s", testData, err)
-	}
-
-	testCases := []struct {
+	tests := []struct {
 		desc    string
 		msg     rabbitmq.Message
 		wantErr bool
@@ -94,43 +71,42 @@ func TestPubSub(t *testing.T) {
 		{
 			desc: "Test if a simple message is correctly published and consumed.",
 			msg: rabbitmq.Message{
-				Body:        data,
+				Body:        gentest.RandomJSONArticle(2, 5),
 				ContentType: rabbitmq.ContentTypeJson,
 				Timestamp:   time.Now().Round(time.Second),
 				Route: rabbitmq.Route{
-					ExchangeName: "test",
+					ExchangeName: gentest.RandomString(7),
 					ExchangeType: amqp.ExchangeTopic,
-					RoutingKey:   "test.event." + strings.ToLower(randomString(5)),
+					RoutingKey:   "test.event." + strings.ToLower(gentest.RandomString(5)),
 				},
 			},
 			wantErr: false,
 		},
 	}
 
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			mq := setUpMQ(t)
 			defer mq.Close()
 
-			err := mq.Publish(ctx, tC.msg)
-			if (err != nil) != tC.wantErr {
-				t.Errorf("RabbitMQ.Publish() error = %+v\n, wantErr = %+v\n", err, tC.wantErr)
+			err := mq.Publish(ctx, tt.msg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RabbitMQ.Publish() error = %+v\n, wantErr = %+v\n", err, tt.wantErr)
 				return
 			}
 
-			msgs, err := mq.Consume(ctx, "deleteArticle", tC.msg.Route)
-			if (err != nil) != tC.wantErr {
-				t.Errorf("RabbitMQ.Consume() error = %+v\n, wantErr = %+v\n", err, tC.wantErr)
+			msgs, err := mq.Consume(ctx, gentest.RandomString(5), tt.msg.Route)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RabbitMQ.Consume() error = %+v\n, wantErr = %+v\n", err, tt.wantErr)
 				return
 			}
 
 			msg := <-msgs
-			if !cmp.Equal(tC.msg, msg) {
-				t.Errorf("Messages are not equal:\n want = %+v\n got = %+v\n diff = %+v\n", tC.msg, msg, cmp.Diff(tC.msg, msg))
-				return
+			if !cmp.Equal(tt.msg, msg) {
+				t.Errorf("Messages are not equal:\n want = %+v\n got = %+v\n diff = %+v\n", tt.msg, msg, cmp.Diff(tt.msg, msg))
 			}
 		})
 	}
@@ -140,18 +116,20 @@ func TestIfExchangeIsCreatedBeforeBindingQueue(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test...")
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	mq := setUpMQ(t)
 	defer mq.Close()
 
-	_, err := mq.Consume(ctx, "testingQueue", rabbitmq.Route{
-		ExchangeName: randomString(7),
-		ExchangeType: "topic",
-		RoutingKey:   randomString(6),
-	})
-	if err != nil {
-		t.Fatalf("RabbitMQ.Consume() error = %+v\n", err)
+	route := rabbitmq.Route{
+		ExchangeName: gentest.RandomString(7),
+		ExchangeType: amqp.ExchangeTopic,
+		RoutingKey:   gentest.RandomString(6),
+	}
+
+	if _, err := mq.Consume(ctx, gentest.RandomString(5), route); err != nil {
+		t.Errorf("RabbitMQ.Consume() error = %+v\n", err)
 	}
 }

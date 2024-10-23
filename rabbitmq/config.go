@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/krixlion/dev_forum-lib/nulls"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -52,11 +53,12 @@ type options struct {
 
 func defaultOptions() options {
 	return options{
-		tracer: nullTracer{},
-		logger: nullLogger{},
+		tracer: nulls.NullTracer{},
+		logger: nulls.NullLogger{},
 	}
 }
 
+// TODO: use a common option func type instead
 type tracerOption struct {
 	tracer trace.Tracer
 }

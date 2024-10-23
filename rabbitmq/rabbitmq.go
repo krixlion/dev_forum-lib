@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/krixlion/dev_forum-lib/tracing"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sony/gobreaker"
 )
@@ -135,7 +136,7 @@ func (mq *RabbitMQ) handleChannelPropagation(ctx context.Context) {
 				done, err := mq.breaker.Allow()
 				if err != nil {
 					req <- nil
-					setSpanErr(span, err)
+					tracing.SetSpanErr(span, err)
 					return
 				}
 
@@ -144,7 +145,7 @@ func (mq *RabbitMQ) handleChannelPropagation(ctx context.Context) {
 					req <- nil
 					mq.opts.logger.Log(ctx, "Failed to open a new channel", "err", err)
 					done(false)
-					setSpanErr(span, err)
+					tracing.SetSpanErr(span, err)
 					return
 				}
 
@@ -188,7 +189,7 @@ func (mq *RabbitMQ) reDial(ctx context.Context) {
 			return
 		}
 
-		setSpanErr(span, err)
+		tracing.SetSpanErr(span, err)
 		mq.opts.logger.Log(ctx, "Failed to connect to RabbitMQ", "err", err)
 
 		time.Sleep(mq.config.ReconnectInterval)
@@ -203,13 +204,13 @@ func (mq *RabbitMQ) dial(ctx context.Context) (err error) {
 
 	done, err := mq.breaker.Allow()
 	if err != nil {
-		setSpanErr(span, err)
+		tracing.SetSpanErr(span, err)
 		return err
 	}
 
 	conn, err := amqp.Dial(mq.url)
 	if err != nil {
-		setSpanErr(span, err)
+		tracing.SetSpanErr(span, err)
 		done(!isConnectionError(err))
 		return err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/krixlion/dev_forum-lib/tracing"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -40,13 +41,13 @@ func (mq *RabbitMQ) publishPipelined(ctx context.Context, messages <-chan Messag
 			case message := <-messages:
 				limiter <- struct{}{}
 				go func() {
-					ctx, span := mq.opts.tracer.Start(ExtractMessageHeaders(ctx, message.Headers), "rabbitmq.publishPipelined", trace.WithSpanKind(trace.SpanKindProducer))
+					ctx, span := mq.opts.tracer.Start(tracing.InjectMetadataIntoContext(ctx, message.Headers), "rabbitmq.publishPipelined", trace.WithSpanKind(trace.SpanKindProducer))
 					defer span.End()
 					defer func() { <-limiter }()
 
 					done, err := mq.breaker.Allow()
 					if err != nil {
-						setSpanErr(span, err)
+						tracing.SetSpanErr(span, err)
 						mq.tryToEnqueue(ctx, message, err, "Failed to publish msg")
 						return
 					}
@@ -60,11 +61,11 @@ func (mq *RabbitMQ) publishPipelined(ctx context.Context, messages <-chan Messag
 							ContentType: string(message.ContentType),
 							Body:        message.Body,
 							Timestamp:   message.Timestamp,
-							Headers:     injectAMQPHeaders(ctx),
+							Headers:     extractAMQPHeadersFromCtx(ctx),
 						},
 					)
 					if err != nil {
-						setSpanErr(span, err)
+						tracing.SetSpanErr(span, err)
 						done(!isConnectionError(err))
 						mq.tryToEnqueue(ctx, message, err, "Failed to publish msg")
 						return
@@ -93,14 +94,14 @@ func (mq *RabbitMQ) prepareExchangePipelined(ctx context.Context, msgs <-chan Me
 			case message := <-msgs:
 				limiter <- struct{}{}
 				go func() {
-					ctx, span := mq.opts.tracer.Start(ExtractMessageHeaders(ctx, message.Headers), "rabbitmq.prepareExchangePipelined", trace.WithSpanKind(trace.SpanKindProducer))
+					ctx, span := mq.opts.tracer.Start(tracing.InjectMetadataIntoContext(ctx, message.Headers), "rabbitmq.prepareExchangePipelined", trace.WithSpanKind(trace.SpanKindProducer))
 					defer span.End()
 					defer func() { <-limiter }()
 
 					done, err := mq.breaker.Allow()
 					if err != nil {
 						done(!isConnectionError(err))
-						setSpanErr(span, err)
+						tracing.SetSpanErr(span, err)
 						mq.tryToEnqueue(ctx, message, err, "Failed to prepare exchange before publishing")
 						return
 					}
@@ -116,7 +117,7 @@ func (mq *RabbitMQ) prepareExchangePipelined(ctx context.Context, msgs <-chan Me
 					)
 					if err != nil {
 						done(!isConnectionError(err))
-						setSpanErr(span, err)
+						tracing.SetSpanErr(span, err)
 						mq.tryToEnqueue(ctx, message, err, "Failed to declare exchange")
 						return
 					}
