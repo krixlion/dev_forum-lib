@@ -6,10 +6,8 @@ import (
 
 	"github.com/krixlion/dev_forum-lib/event"
 	"github.com/krixlion/dev_forum-lib/logging"
+	rabbitmq "github.com/krixlion/dev_forum-lib/rabbitmq"
 	"github.com/krixlion/dev_forum-lib/tracing"
-	rabbitmq "github.com/krixlion/dev_forum-rabbitmq"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -80,7 +78,7 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 				return
 			case msg := <-messages:
 				func() {
-					ctx, span := b.tracer.Start(rabbitmq.ExtractMessageHeaders(context.Background(), msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
+					ctx, span := b.tracer.Start(tracing.InjectMetadataIntoContext(context.Background(), msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
 					defer span.End()
 
 					e := event.Event{}

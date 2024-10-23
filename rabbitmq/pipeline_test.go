@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/krixlion/dev_forum-lib/internal/gentest"
-	rabbitmq "github.com/krixlion/dev_forum-rabbitmq"
+	rabbitmq "github.com/krixlion/dev_forum-lib/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
