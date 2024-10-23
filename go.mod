@@ -8,6 +8,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/krixlion/dev_forum-rabbitmq v0.0.0-20240728213819-3b74453e5c53
 	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.9.0
 	github.com/uptrace/opentelemetry-go-extra/otelzap v0.3.1
@@ -18,6 +19,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.27.0
 	go.opentelemetry.io/otel/sdk/metric v1.27.0
 	go.opentelemetry.io/otel/trace v1.28.0
+	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.65.0
@@ -30,7 +32,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/sony/gobreaker v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/uptrace/opentelemetry-go-extra/otelutil v0.3.1 // indirect
 	go.opentelemetry.io/otel/log v0.3.0 // indirect

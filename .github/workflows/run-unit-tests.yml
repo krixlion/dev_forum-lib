@@ -1,4 +1,4 @@
-name: Run unit tests on local Go environment
+name: Run tests
 
 on:
     push:
@@ -16,6 +16,11 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+            rabbitmq:
+                image: rabbitmq:3.11.3-alpine
+                ports:
+                - 5672:5672
     steps:
       - uses: actions/setup-go@v5
         with:
