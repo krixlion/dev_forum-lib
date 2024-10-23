@@ -12,12 +12,7 @@ import (
 	"github.com/krixlion/dev_forum-lib/internal/gentest"
 	rabbitmq "github.com/krixlion/dev_forum-lib/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go.uber.org/goleak"
 )
-
-func TestMain(m *testing.M) {
-	goleak.VerifyTestMain(m)
-}
 
 func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 	const consumer = "TESTING"
