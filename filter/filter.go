@@ -123,7 +123,6 @@ func (filter Filter) String() string {
 }
 
 func (param Parameter) String() string {
-
 	query := ""
 	query += strings.ToLower(param.Attribute)
 	query += operatorOpeningSign
