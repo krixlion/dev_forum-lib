@@ -36,37 +36,31 @@ func (b *Broker) ResilientPublish(e event.Event) error {
 	return b.messageQueue.Enqueue(msg)
 }
 
-func (b *Broker) Publish(ctx context.Context, e event.Event) error {
+func (b *Broker) Publish(ctx context.Context, e event.Event) (err error) {
 	ctx, span := b.tracer.Start(ctx, "broker.Publish", trace.WithSpanKind(trace.SpanKindProducer))
 	defer span.End()
+	defer tracing.SetSpanErr(span, err)
 
 	msg, err := messageFromEvent(e)
 	if err != nil {
-		tracing.SetSpanErr(span, err)
 		return err
 	}
 
-	if err := b.messageQueue.Publish(ctx, msg); err != nil {
-		tracing.SetSpanErr(span, err)
-		return err
-	}
-
-	return nil
+	return b.messageQueue.Publish(ctx, msg)
 }
 
-func (b *Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (<-chan event.Event, error) {
+func (b *Broker) Consume(ctx context.Context, queue string, eventType event.EventType) (_ <-chan event.Event, err error) {
 	ctx, span := b.tracer.Start(ctx, "broker.Consume init")
 	defer span.End()
+	defer tracing.SetSpanErr(span, err)
 
 	r, err := routeFromEvent(eventType)
 	if err != nil {
-		tracing.SetSpanErr(span, err)
 		return nil, err
 	}
 
 	messages, err := b.messageQueue.Consume(ctx, queue, r)
 	if err != nil {
-		tracing.SetSpanErr(span, err)
 		return nil, err
 	}
 
