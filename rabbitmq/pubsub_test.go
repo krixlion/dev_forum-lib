@@ -67,6 +67,7 @@ func TestPubSub(t *testing.T) {
 					ExchangeType: amqp.ExchangeTopic,
 					RoutingKey:   "test.event." + strings.ToLower(gentest.RandomString(5)),
 				},
+				Headers: make(map[string]string),
 			},
 			wantErr: false,
 		},
