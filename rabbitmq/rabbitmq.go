@@ -66,17 +66,15 @@ func NewRabbitMQ(consumer, user, pass, host, port string, config Config, opts ..
 	}
 
 	mq := &RabbitMQ{
-		consumerName: consumer,
-		shutdown:     cancel,
-
+		consumerName:    consumer,
+		url:             url,
+		shutdown:        cancel,
+		config:          config,
+		connMutex:       sync.Mutex{},
 		publishQueue:    make(chan Message, config.QueueSize),
 		getChannel:      make(chan chan *amqp.Channel),
 		notifyConnClose: make(chan *amqp.Error, 16),
-
-		connMutex: sync.Mutex{},
-		url:       url,
-		config:    config,
-		opts:      defaultOptions(),
+		opts:            defaultOptions(),
 		breaker: gobreaker.NewTwoStepCircuitBreaker(gobreaker.Settings{
 			Name:        consumer,
 			MaxRequests: config.MaxRequests,
