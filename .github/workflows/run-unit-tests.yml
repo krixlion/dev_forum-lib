@@ -29,6 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run tests
         run: |
+            cp .env.example .env
             go test -coverprofile cover.out ./... -race -timeout=10s
       
       - name: Coveralls
