@@ -21,30 +21,18 @@ func TestMain(m *testing.M) {
 
 func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 	const consumer = "TESTING"
+	port := "5672"
+	host := "localhost"
+	user := "guest"
+	pass := "guest"
 
 	if err := godotenv.Load(); err != nil {
 		t.Logf("Failed to load env file, using default settings, err: %s", err)
-	}
-
-	var ok bool
-	port, ok = os.LookupEnv("MQ_PORT")
-	if !ok || port == "" {
-		port = "5672"
-	}
-
-	host, ok = os.LookupEnv("MQ_HOST")
-	if !ok || host == "" {
-		host = "localhost"
-	}
-
-	user, ok = os.LookupEnv("MQ_USER")
-	if !ok || user == "" {
-		user = "guest"
-	}
-
-	pass, ok = os.LookupEnv("MQ_PASS")
-	if !ok || pass == "" {
-		pass = "guest"
+	} else {
+		port = os.Getenv("MQ_PORT")
+		host = os.Getenv("MQ_HOST")
+		user = os.Getenv("MQ_USER")
+		pass = os.Getenv("MQ_PASS")
 	}
 
 	config := rabbitmq.Config{
