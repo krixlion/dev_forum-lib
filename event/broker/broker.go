@@ -82,7 +82,7 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 						return
 					}
 
-					otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(e.Metadata))
+					e.Metadata = tracing.ExtractMetadataFromContext(ctx)
 					events <- e
 				}()
 			}
