@@ -8,6 +8,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type Logger interface {
+	Log(ctx context.Context, msg string, keyvals ...interface{})
+}
+
+type Option interface {
+	apply(*options)
+}
+
 type Config struct {
 	QueueSize         int           // Max number of messages internally queued for publishing.
 	MaxWorkers        int           // Max number of concurrent workers per operation type.
@@ -30,20 +38,22 @@ func DefaultConfig() Config {
 	}
 }
 
-type Logger interface {
-	Log(ctx context.Context, msg string, keyvals ...interface{})
-}
-
-type Option interface {
-	apply(*options)
-}
-
 func WithTracer(tracer trace.Tracer) Option {
-	return tracerOption{tracer}
+	return optionFunc(func(opts *options) {
+		opts.tracer = tracer
+	})
 }
 
 func WithLogger(logger Logger) Option {
-	return loggerOption{logger}
+	return optionFunc(func(opts *options) {
+		opts.logger = logger
+	})
+}
+
+type optionFunc func(opts *options)
+
+func (fn optionFunc) apply(opts *options) {
+	fn(opts)
 }
 
 type options struct {
@@ -56,21 +66,4 @@ func defaultOptions() options {
 		tracer: nulls.NullTracer{},
 		logger: nulls.NullLogger{},
 	}
-}
-
-// TODO: use a common option func type instead
-type tracerOption struct {
-	tracer trace.Tracer
-}
-
-func (opt tracerOption) apply(opts *options) {
-	opts.tracer = opt.tracer
-}
-
-type loggerOption struct {
-	logger Logger
-}
-
-func (opt loggerOption) apply(opts *options) {
-	opts.logger = opt.logger
 }
