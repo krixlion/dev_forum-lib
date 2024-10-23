@@ -8,15 +8,26 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Load assumes the .env file is located in the root directory.
-// It panics if it cannot find the file named ".env" in the project root dir.
-func Load(projectDir string) {
-	re := regexp.MustCompile(`^(.*` + projectDir + `)`)
-	cwd, _ := os.Getwd()
+// Load assumes the ".env" file is located in the root directory.
+// It returns an error if it cannot find a file named ".env" in the project root dir.
+func Load(projectDir string) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("failed to load .env: %w", err)
+		}
+	}()
+
+	re, err := regexp.Compile(`^(.*` + projectDir + `)`)
+	if err != nil {
+		return err
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
 	rootPath := re.Find([]byte(cwd))
 
-	err := godotenv.Load(string(rootPath) + `/.env`)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to load .env, err: %s", err))
-	}
+	return godotenv.Load(string(rootPath) + `/.env`)
 }
