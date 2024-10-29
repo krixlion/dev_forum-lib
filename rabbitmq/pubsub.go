@@ -153,7 +153,8 @@ func (mq *RabbitMQ) prepareQueue(ctx context.Context, command string, route Rout
 		return amqp.Queue{}, err
 	}
 
-	queue, err := ch.QueueDeclare(command, false, false, false, false, nil)
+	args := amqp.Table{amqp.QueueTypeArg: amqp.QueueTypeQuorum}
+	queue, err := ch.QueueDeclare(command, true, false, false, false, args)
 	if err != nil {
 		done(!isConnectionError(err))
 		return amqp.Queue{}, err
