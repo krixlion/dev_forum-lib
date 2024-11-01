@@ -11,7 +11,7 @@ import (
 
 var ErrFullQueue = errors.New("publish queue is full")
 
-// enqueue appends a message to the publishQueue and return a non-nil error if the queue is full.
+// Enqueue appends a message to the publishQueue and returns a non-nil error if the queue is full.
 func (mq *RabbitMQ) Enqueue(msg Message) error {
 	select {
 	case mq.publishQueue <- msg:
