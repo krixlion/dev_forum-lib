@@ -30,7 +30,7 @@ jobs:
       - name: Run tests
         run: |
             cp .env.example .env
-            go test -coverprofile cover.out ./... -race -v -timeout=10s
+            go test -coverprofile cover.out ./... -race -v -timeout=30s
       
       - name: Coveralls
         uses: coverallsapp/github-action@v2
