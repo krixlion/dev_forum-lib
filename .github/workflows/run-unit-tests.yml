@@ -21,6 +21,11 @@ jobs:
                 image: rabbitmq:3.11
                 ports:
                 - 5672:5672
+                healthcheck:
+                  test: rabbitmq-diagnostics -q status && rabbitmq-diagnostics -q check_local_alarms
+                  interval: 60s
+                  timeout: 30s
+                  retries: 3
     steps:
       - uses: actions/setup-go@v5
         with:
