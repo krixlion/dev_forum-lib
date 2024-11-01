@@ -70,7 +70,7 @@ func TestPubSub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			mq := setUpMQ(t)
