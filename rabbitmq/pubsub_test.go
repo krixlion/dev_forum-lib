@@ -3,7 +3,6 @@ package rabbitmq_test
 import (
 	"context"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -58,9 +57,9 @@ func TestPubSub(t *testing.T) {
 				ContentType: rabbitmq.ContentTypeJson,
 				Timestamp:   time.Now().Round(time.Second),
 				Route: rabbitmq.Route{
-					ExchangeName: gentest.RandomString(7),
+					ExchangeName: "test",
 					ExchangeType: amqp.ExchangeTopic,
-					RoutingKey:   "test.event." + strings.ToLower(gentest.RandomString(5)),
+					RoutingKey:   "test.pubsub",
 				},
 				Headers: make(map[string]string),
 			},
@@ -82,7 +81,7 @@ func TestPubSub(t *testing.T) {
 				return
 			}
 
-			msgs, err := mq.Consume(ctx, gentest.RandomString(5), tt.msg.Route)
+			msgs, err := mq.Consume(ctx, "test_pubsub", tt.msg.Route)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RabbitMQ.Consume() error = %+v\n, wantErr = %+v\n", err, tt.wantErr)
 				return

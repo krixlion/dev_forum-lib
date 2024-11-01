@@ -2,7 +2,6 @@ package rabbitmq_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ func TestPubSubPipeline(t *testing.T) {
 				Route: rabbitmq.Route{
 					ExchangeName: "test",
 					ExchangeType: amqp.ExchangeTopic,
-					RoutingKey:   "test.event." + strings.ToLower(gentest.RandomString(5)),
+					RoutingKey:   "test.pubsub.pipelined",
 				},
 				Headers: make(map[string]string),
 			},
@@ -52,7 +51,7 @@ func TestPubSubPipeline(t *testing.T) {
 				return
 			}
 
-			messages, err := mq.Consume(ctx, gentest.RandomString(5), tt.msg.Route)
+			messages, err := mq.Consume(ctx, "test_pubsub_pipelined", tt.msg.Route)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RabbitMQ.Consume() error = %+v\n wantErr = %+v\n", err, tt.wantErr)
 				return
