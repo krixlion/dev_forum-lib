@@ -1,16 +1,12 @@
 package rabbitmq
 
 import (
-	"context"
 	"time"
 
+	"github.com/krixlion/dev_forum-lib/logging"
 	"github.com/krixlion/dev_forum-lib/nulls"
 	"go.opentelemetry.io/otel/trace"
 )
-
-type Logger interface {
-	Log(ctx context.Context, msg string, keyvals ...interface{})
-}
 
 type Option interface {
 	apply(*options)
@@ -44,7 +40,7 @@ func WithTracer(tracer trace.Tracer) Option {
 	})
 }
 
-func WithLogger(logger Logger) Option {
+func WithLogger(logger logging.Logger) Option {
 	return optionFunc(func(opts *options) {
 		opts.logger = logger
 	})
@@ -58,7 +54,7 @@ func (fn optionFunc) apply(opts *options) {
 
 type options struct {
 	tracer trace.Tracer
-	logger Logger
+	logger logging.Logger
 }
 
 func defaultOptions() options {
