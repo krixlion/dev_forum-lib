@@ -2,13 +2,15 @@ package rabbitmq_test
 
 import (
 	"context"
+	"log"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/joho/godotenv"
+	"github.com/krixlion/dev_forum-lib/env"
 	"github.com/krixlion/dev_forum-lib/internal/gentest"
+	"github.com/krixlion/dev_forum-lib/logging"
 	rabbitmq "github.com/krixlion/dev_forum-lib/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -20,7 +22,13 @@ func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 	user := "guest"
 	pass := "guest"
 
-	if err := godotenv.Load(); err != nil {
+	amqp.SetLogger(log.Default())
+	logger, err := logging.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+
+	if err := env.Load("dev_forum-lib"); err != nil {
 		t.Logf("Failed to load env file, using default settings, err: %s", err)
 	} else {
 		port = os.Getenv("MQ_PORT")
@@ -37,7 +45,8 @@ func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 		ClosedTimeout:     time.Second * 15,
 		MaxWorkers:        10,
 	}
-	return rabbitmq.NewRabbitMQ(consumer, user, pass, host, port, config)
+
+	return rabbitmq.NewRabbitMQ(consumer, user, pass, host, port, config, rabbitmq.WithLogger(logger))
 }
 
 func TestPubSub(t *testing.T) {
