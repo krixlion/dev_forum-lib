@@ -90,6 +90,8 @@ func TestPubSub(t *testing.T) {
 				return
 			}
 
+			time.Sleep(time.Second * 2)
+
 			msgs, err := mq.Consume(ctx, "test_pubsub", tt.msg.Route)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RabbitMQ.Consume() error = %+v\n, wantErr = %+v\n", err, tt.wantErr)

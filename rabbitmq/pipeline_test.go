@@ -51,6 +51,7 @@ func TestPubSubPipeline(t *testing.T) {
 				return
 			}
 
+			time.Sleep(time.Second * 2)
 			messages, err := mq.Consume(ctx, "test_pubsub_pipelined", tt.msg.Route)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RabbitMQ.Consume() error = %+v\n wantErr = %+v\n", err, tt.wantErr)
