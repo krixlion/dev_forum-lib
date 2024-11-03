@@ -109,7 +109,10 @@ func (mq *RabbitMQ) Consume(ctx context.Context, command string, route Route) (_
 	go func() {
 		for {
 			select {
-			case delivery := <-deliveries:
+			case delivery, ok := <-deliveries:
+				if !ok {
+					continue
+				}
 				func() {
 					ctx := injectAMQPHeadersIntoCtx(context.Background(), delivery.Headers)
 					ctx, span := mq.opts.tracer.Start(ctx, "rabbitmq.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
@@ -133,6 +136,7 @@ func (mq *RabbitMQ) Consume(ctx context.Context, command string, route Route) (_
 				}()
 			case <-ctx.Done():
 				close(messages)
+				ch.Close()
 				return
 			}
 		}
@@ -147,6 +151,7 @@ func (mq *RabbitMQ) prepareQueue(ctx context.Context, command string, route Rout
 	defer tracing.SetSpanErr(span, err)
 
 	ch := mq.askForChannel()
+	defer ch.Close()
 
 	done, err := mq.breaker.Allow()
 	if err != nil {

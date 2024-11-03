@@ -41,7 +41,7 @@ jobs:
             until [ "$(docker inspect -f {{.State.Health.Status}} rabbitmq)" == "healthy" ]; do sleep 0.5; done;
             echo "RabbitMQ is healthy!"
             
-            docker exec rabbitmq rabbitmqctl -n rabbit@target-host set_log_level debug
+            docker exec rabbitmq rabbitmqctl set_log_level debug
             
             curl -o rabbitmqadmin "http://localhost:15672/cli/rabbitmqadmin"
             python3 rabbitmqadmin declare exchange name=my-new-exchange type=fanout
