@@ -40,9 +40,9 @@ func setUpMQ(t *testing.T) *rabbitmq.RabbitMQ {
 	config := rabbitmq.Config{
 		QueueSize:         100,
 		ReconnectInterval: time.Millisecond * 100,
-		MaxRequests:       30,
-		ClearInterval:     time.Second * 5,
-		ClosedTimeout:     time.Second * 15,
+		MaxRequests:       300000,
+		ClearInterval:     time.Millisecond,
+		ClosedTimeout:     time.Millisecond,
 		MaxWorkers:        10,
 	}
 

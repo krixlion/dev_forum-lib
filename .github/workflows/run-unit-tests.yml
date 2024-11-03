@@ -29,21 +29,25 @@ jobs:
             docker run -d \
               --name rabbitmq \
               -p 5672:5672 \
+              -p 15672:15672 \
               --health-cmd "rabbitmq-diagnostics status && rabbitmq-diagnostics check_local_alarms" \
-              --health-interval 60s \
-              --health-timeout 30s \
+              --health-interval 10s \
+              --health-timeout 10s \
               --health-retries 10 \
               --memory-reservation 150m \
-              --memory 300m \
-              rabbitmq:3.11
+              rabbitmq:3.11-management
 
             echo "Waiting for RabbitMQ healthcheck to finish."
             until [ "$(docker inspect -f {{.State.Health.Status}} rabbitmq)" == "healthy" ]; do sleep 0.5; done;
             echo "RabbitMQ is healthy!"
-
-            # Set high resource watermarks to avoid getting blocked on alarms.
-            docker exec rabbitmq rabbitmqctl set_vm_memory_high_watermark 1
-            docker exec rabbitmq rabbitmqctl set_disk_free_limit 1073741824 # 1GiB
+            
+            docker exec rabbitmq rabbitmqctl -n rabbit@target-host set_log_level debug
+            
+            curl -o rabbitmqadmin "http://localhost:15672/cli/rabbitmqadmin"
+            python3 rabbitmqadmin declare exchange name=my-new-exchange type=fanout
+            python3 rabbitmqadmin declare queue name=my-new-queue durable=false
+            python3 rabbitmqadmin publish exchange=my-new-exchange routing_key=test payload="hello, world"
+            python3 rabbitmqadmin get queue=my-new-queue ackmode=ack_requeue_false
 
       - name: Run tests
         run: |

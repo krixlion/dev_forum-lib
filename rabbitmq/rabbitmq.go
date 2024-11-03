@@ -206,7 +206,7 @@ func (mq *RabbitMQ) dial(ctx context.Context) (err error) {
 		return err
 	}
 
-	conn, err := amqp.Dial(mq.url)
+	conn, err := amqp.DialConfig(mq.url, amqp.Config{Dial: amqp.DefaultDial(time.Second)})
 	if err != nil {
 		done(!isConnectionError(err))
 		return err
