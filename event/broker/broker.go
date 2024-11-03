@@ -70,7 +70,10 @@ func (b *Broker) Consume(ctx context.Context, queue string, eventType event.Even
 			select {
 			case <-ctx.Done():
 				return
-			case msg := <-messages:
+			case msg, ok := <-messages:
+				if !ok {
+					continue
+				}
 				func() {
 					ctx, span := b.tracer.Start(tracing.InjectMetadataIntoContext(context.Background(), msg.Headers), "broker.Consume", trace.WithSpanKind(trace.SpanKindConsumer))
 					defer span.End()

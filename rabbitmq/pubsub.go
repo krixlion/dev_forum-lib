@@ -109,7 +109,10 @@ func (mq *RabbitMQ) Consume(ctx context.Context, command string, route Route) (_
 	go func() {
 		for {
 			select {
-			case delivery := <-deliveries:
+			case delivery, ok := <-deliveries:
+				if !ok {
+					continue
+				}
 				func() {
 					ctx := injectAMQPHeadersIntoCtx(context.Background(), delivery.Headers)
 					ctx, span := mq.opts.tracer.Start(ctx, "rabbitmq.Consume", trace.WithSpanKind(trace.SpanKindConsumer))

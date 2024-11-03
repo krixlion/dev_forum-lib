@@ -38,7 +38,10 @@ func (mq *RabbitMQ) publishPipelined(ctx context.Context, messages <-chan Messag
 
 		for {
 			select {
-			case message := <-messages:
+			case message, ok := <-messages:
+				if !ok {
+					continue
+				}
 				limiter <- struct{}{}
 				go func() {
 					ctx := tracing.InjectMetadataIntoContext(ctx, message.Headers)
@@ -87,7 +90,10 @@ func (mq *RabbitMQ) prepareExchangePipelined(ctx context.Context, msgs <-chan Me
 
 		for {
 			select {
-			case message := <-msgs:
+			case message, ok := <-msgs:
+				if !ok {
+					continue
+				}
 				limiter <- struct{}{}
 				go func() {
 					ctx := tracing.InjectMetadataIntoContext(ctx, message.Headers)

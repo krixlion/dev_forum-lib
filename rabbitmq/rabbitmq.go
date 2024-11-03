@@ -125,7 +125,10 @@ func (mq *RabbitMQ) handleChannelPropagation(ctx context.Context) {
 	limiter := make(chan struct{}, mq.config.MaxWorkers)
 	for {
 		select {
-		case req := <-mq.getChannel:
+		case req, ok := <-mq.getChannel:
+			if !ok {
+				continue
+			}
 			limiter <- struct{}{}
 			go func() {
 				ctx, span := mq.opts.tracer.Start(ctx, "rabbitmq.handleChannelRead")
@@ -160,8 +163,8 @@ func (mq *RabbitMQ) handleChannelPropagation(ctx context.Context) {
 func (mq *RabbitMQ) handleConnectionErrors(ctx context.Context) {
 	for {
 		select {
-		case e := <-mq.notifyConnClose:
-			if e == nil {
+		case e, ok := <-mq.notifyConnClose:
+			if !ok || e == nil {
 				continue
 			}
 			mq.reDial(ctx)
