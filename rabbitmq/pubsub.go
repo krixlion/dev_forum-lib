@@ -136,6 +136,7 @@ func (mq *RabbitMQ) Consume(ctx context.Context, command string, route Route) (_
 				}()
 			case <-ctx.Done():
 				close(messages)
+				ch.Close()
 				return
 			}
 		}
@@ -150,6 +151,7 @@ func (mq *RabbitMQ) prepareQueue(ctx context.Context, command string, route Rout
 	defer tracing.SetSpanErr(span, err)
 
 	ch := mq.askForChannel()
+	defer ch.Close()
 
 	done, err := mq.breaker.Allow()
 	if err != nil {
