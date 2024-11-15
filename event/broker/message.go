@@ -11,8 +11,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// messageFromEvent returns a message suitable for pub/sub methods and
-// a non-nil error if the event could not be marshaled into JSON.
+// messageFromEvent returns a message suitable for pub/sub methods.
 func messageFromEvent(e event.Event) (rabbitmq.Message, error) {
 	body, err := json.Marshal(e)
 	if err != nil {
