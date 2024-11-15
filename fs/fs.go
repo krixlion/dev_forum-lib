@@ -1,3 +1,6 @@
+// fs provides most of the functionality that the io/fs package provides
+// and serves as a stand-in replacement.
+// It also allows to mock out the file system in tests.
 package fs
 
 import (
@@ -7,13 +10,11 @@ import (
 	"github.com/spf13/afero"
 )
 
-// fileSystem is used so that it's possible to mock out the file system in tests.
-// It provides most of the functionality that the io/fs package provides
-// and serves as a stand-in replacement.
 var fileSystem = afero.NewOsFs()
 
 // SetGlobalFileSystem sets the FS to use by all the functions in this package.
-// This allows to switch between OS FS and mock FS during tests.
+// It allows to switch between OS FS and mock FS during tests.
+// This function is not thread safe and should not be called concurrently.
 func SetGlobalFileSystem(fs afero.Fs) {
 	fileSystem = fs
 }
@@ -41,6 +42,8 @@ func Stat(name string) (os.FileInfo, error) {
 	return fileSystem.Stat(name)
 }
 
+// ReadFile is a shorthand for fs.Open followed by io.ReadAll.
+// It returns the first encountered non-nil error.
 func ReadFile(path string) ([]byte, error) {
 	file, err := Open(path)
 	if err != nil {
