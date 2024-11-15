@@ -7,12 +7,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/krixlion/dev_forum-lib/internal/gentest"
+	"github.com/krixlion/dev_forum-lib/internal/testtypes"
 )
 
 func Test_MakeEvent(t *testing.T) {
-	randString := gentest.RandomString(5)
-	randArticle := gentest.RandomArticle(1, 2)
 	type args struct {
 		aggregateId AggregateId
 		eType       EventType
@@ -29,20 +27,20 @@ func Test_MakeEvent(t *testing.T) {
 			args: args{
 				aggregateId: ArticleAggregate,
 				eType:       ArticleDeleted,
-				body:        randString,
-				metadata:    map[string]string{"test": randString},
+				body:        "asJKDa",
+				metadata:    map[string]string{"test": "asJKDa"},
 			},
 			want: Event{
 				AggregateId: ArticleAggregate,
 				Type:        ArticleDeleted,
 				Body: func() []byte {
-					data, err := json.Marshal(randString)
+					data, err := json.Marshal("asJKDa")
 					if err != nil {
 						panic(err)
 					}
 					return data
 				}(),
-				Metadata:  map[string]string{"test": randString},
+				Metadata:  map[string]string{"test": "asJKDa"},
 				Timestamp: time.Now(),
 			},
 		},
@@ -51,19 +49,20 @@ func Test_MakeEvent(t *testing.T) {
 			args: args{
 				aggregateId: ArticleAggregate,
 				eType:       ArticleUpdated,
-				body:        randArticle,
+				body: testtypes.Article{
+					Id:        "test-id",
+					UserId:    "test-user-id",
+					Title:     "test-title",
+					Body:      "test-body",
+					CreatedAt: time.Date(2000, time.April, 1, 1, 1, 1, 1, time.Local),
+					UpdatedAt: time.Date(2000, time.April, 1, 1, 1, 1, 1, time.Local),
+				},
 			},
 			want: Event{
 				AggregateId: ArticleAggregate,
 				Type:        ArticleUpdated,
-				Body: func() []byte {
-					data, err := json.Marshal(randArticle)
-					if err != nil {
-						panic(err)
-					}
-					return data
-				}(),
-				Timestamp: time.Now(),
+				Body:        []byte(`{"id":"test-id","user_id":"test-user-id","title":"test-title","body":"test-body","created_at":"2000-04-01T01:01:01.000000001+02:00","updated_at":"2000-04-01T01:01:01.000000001+02:00"}`),
+				Timestamp:   time.Now(),
 			},
 		},
 	}
