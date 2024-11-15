@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/krixlion/dev_forum-lib/event"
-	"github.com/krixlion/dev_forum-lib/mocks"
+	"github.com/krixlion/dev_forum-lib/event/mocks"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/sync/errgroup"
 )
