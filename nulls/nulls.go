@@ -11,13 +11,13 @@ import (
 )
 
 var _ logging.Logger = (*NullLogger)(nil)
+var _ trace.Tracer = (*NullTracer)(nil)
+var _ trace.Span = (*NullSpan)(nil)
 
 type NullLogger struct{}
 
 func (NullLogger) Log(context.Context, string, ...any) {}
 func (NullLogger) Sync() error                         { return nil }
-
-var _ trace.Tracer = (*NullTracer)(nil)
 
 type NullTracer struct {
 	embedded.Tracer
