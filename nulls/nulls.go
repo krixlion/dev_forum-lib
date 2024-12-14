@@ -1,3 +1,5 @@
+// nulls package provides no-op implementations for various interfaces for testing purposes.
+// All methods of Null structs return either default values or safe, noop substitutes.
 package nulls
 
 import (
